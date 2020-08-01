@@ -1,0 +1,16 @@
+pub struct FooState {
+  name: string
+}
+
+pub interface Foo {
+  new
+  abc
+}
+
+pub fn new() {
+
+}
+
+fn abc() {
+
+}

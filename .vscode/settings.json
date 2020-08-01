@@ -1,0 +1,8 @@
+{
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "editor.formatOnSave": true,
+  "prettier.useTabs": false,
+  "prettier.tabWidth": 2
+  // "typescript.implementationsCodeLens.enabled": true
+  // "typescript.referencesCodeLens.enabled": true
+}
