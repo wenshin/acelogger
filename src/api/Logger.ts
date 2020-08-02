@@ -1,4 +1,4 @@
-import { Sampler, SpanOptions, TimeInput } from '@opentelemetry/api';
+import { Sampler, TimeInput } from './opentelemetry';
 import { AlertLevel } from './consts';
 import { LoggerEventExporter } from './LoggerEventExporter';
 import {
@@ -7,7 +7,7 @@ import {
   LoggerStoreEvent,
   LoggerTimmingEvent
 } from './LoggerEvent';
-import { SpanStruct } from './Tracer';
+import { SpanStruct, SpanOptions } from './Tracer';
 
 export type LogFunction = (message: string, evt?: LoggerEvent) => void;
 

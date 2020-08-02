@@ -7,7 +7,9 @@ export * from './Tracer';
 export * from './Logger';
 export * from './LoggerEvent';
 export * from './LoggerEventExporter';
+export * from './ExportResult';
 export * from './consts';
+export * from './opentelemetry';
 
 export class Api {
   private registries = new Map<string, any>();

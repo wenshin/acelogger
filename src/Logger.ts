@@ -1,4 +1,3 @@
-import { Sampler, CanonicalCode } from '@opentelemetry/api';
 import api, {
   SpanOptions,
   Logger,
@@ -11,7 +10,9 @@ import api, {
   LoggerCountEvent,
   LoggerStoreEvent,
   ExportResult,
-  SpanLogger
+  SpanLogger,
+  Sampler,
+  CanonicalCode
 } from './api';
 import { getMillisecondsTime } from './utils';
 

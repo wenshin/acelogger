@@ -1,5 +1,8 @@
 import { TimeInput, LoggerEvent, EventType } from './api';
-import { isTimeInputHrTime } from '@opentelemetry/core';
+
+export function isTimeInputHrTime(time: TimeInput): boolean {
+  return Array.isArray(time) && time.length === 2;
+}
 
 export function getMillisecondsTime(time: TimeInput): number {
   return time && isTimeInputHrTime(time)

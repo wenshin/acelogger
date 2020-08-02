@@ -1,9 +1,5 @@
-import {
-  SpanOptions as TSpanOptions,
-  SpanContext,
-  SpanKind,
-  Attributes
-} from '@opentelemetry/api';
+import { SpanOptions as TSpanOptions } from '@opentelemetry/api/build/src/trace/SpanOptions';
+import { SpanContext, SpanKind, Attributes } from './opentelemetry';
 
 export interface SpanStruct {
   name: string;

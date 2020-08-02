@@ -8,9 +8,22 @@ Acelogger is a light and powerful logger with tracing and metrics logging. It is
 
 opentelemetry, opentracing and other libraries, are hard to understand and use.
 
+1. too many concepts. TracerProvider, Tracer, SpanProcessor, Span, Logger, Event, Metric, MetricProvider etc.
+2. large size
+
+   1. @opentelemetry/tracing Minimized 39.9kb
+   2. @opentelemetry/api Minimized 13.8kb
+   3. @opentelemetry/web Minimized 46.1kb
+   4. acelogger minimized 22kb
+
+3. bad design
+
+   1. many circulation dependencies
+   2. do not support tree shaking
+
 ## Core Concept
 
-The logging, tracing and metrics are all just the events logged by logger, event have different alert level and event type.
+The logging, tracing and metrics are events logged by logger, event have different alert level and event type.
 
 1. tracer is just the factory class for span
 2. span is just struct without methods
@@ -106,3 +119,11 @@ spanLogger.endSpan({
 [See Details](./src/api)
 
 # ChangeLog
+
+## 2020-08-02 0.0.2
+
+- fix opentelemetry-api do not support tree shaking problem
+
+## 2020-08-02 0.0.1
+
+- first version with logger and tracer

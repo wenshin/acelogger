@@ -1,11 +1,14 @@
-import {
+import api, {
+  Tracer,
+  TracerStruct,
+  SpanStruct,
+  SpanOptions,
   SpanContext,
   TimeInput,
   TraceFlags,
   Attributes,
   SpanKind
-} from '@opentelemetry/api';
-import api, { Tracer, TracerStruct, SpanStruct, SpanOptions } from './api';
+} from './api';
 import { getMillisecondsTime } from './utils';
 
 interface SimpleTracerConfig {
@@ -48,7 +51,7 @@ export default class SimpleTracer implements Tracer {
     this.name = config.name;
     this.version = config.version;
     this.module = 'acelogger';
-    this.moduleVersion = '0.0.1';
+    this.moduleVersion = '0.0.2';
     this.attributes = config.attributes || {};
     this.startTime = getMillisecondsTime(config.startTime) || api.timer.now();
   }

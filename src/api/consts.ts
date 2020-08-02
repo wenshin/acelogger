@@ -13,9 +13,3 @@ export enum AlertLevel {
   Warn,
   Error
 }
-
-export enum ExportResult {
-  SUCCESS,
-  FAILED_NOT_RETRYABLE,
-  FAILED_RETRYABLE
-}

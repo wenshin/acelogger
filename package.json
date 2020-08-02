@@ -1,6 +1,6 @@
 {
   "name": "acelogger",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "a logger with tracing, metrics inspired by opentelemetry-js API",
   "main": "build/main/index.js",
   "typings": "build/main/index.d.ts",
@@ -12,7 +12,7 @@
     "prepublish": "git tag 1.0.3 &> /dev/null; npm run test:lint && npm run build && npm run test:unit-build",
     "describe": "npm-scripts-info",
     "build": "run-s clean && run-p build:*",
-    "build:main": "tsc -p tsconfig.json",
+    "build:main": "webpack --config webpack.es5.config.js",
     "build:module": "tsc -p tsconfig.module.json",
     "demo:dev": "webpack --watch --config demo/webpack.config.js",
     "fix": "run-s fix:*",
@@ -53,8 +53,7 @@
     "node": ">=8.9"
   },
   "dependencies": {
-    "@opentelemetry/api": "^0.6.0",
-    "@opentelemetry/core": "^0.10.0"
+    "@opentelemetry/api": "^0.6.0"
   },
   "devDependencies": {
     "@babel/core": "^7.7.7",
@@ -84,6 +83,7 @@
     "tslint-immutable": "^6.0.1",
     "typescript": "^3.5.3",
     "webpack": "^4.41.5",
+    "webpack-bundle-analyzer": "^3.8.0",
     "webpack-cli": "^3.3.10"
   },
   "config": {

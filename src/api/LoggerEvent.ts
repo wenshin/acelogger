@@ -2,12 +2,9 @@ import {
   CanonicalCode,
   Attributes,
   TimeInput,
-  SpanKind,
-  TraceFlags
-} from '@opentelemetry/api';
+  SpanKind
+} from './opentelemetry';
 import { AlertLevel, EventType } from './consts';
-
-export { CanonicalCode, SpanKind, TimeInput, Attributes, TraceFlags };
 
 export interface LoggerEvent {
   // event name

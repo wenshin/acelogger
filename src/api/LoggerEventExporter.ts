@@ -1,4 +1,4 @@
-import { ExportResult } from './consts';
+import { ExportResult } from './ExportResult';
 import { LoggerEvent } from './LoggerEvent';
 
 export interface LoggerEventExporter {

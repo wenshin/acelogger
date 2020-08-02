@@ -1,5 +1,4 @@
-import { ExportResult } from '@opentelemetry/core';
-import { LoggerEventExporter, LoggerEvent } from '../api';
+import { LoggerEventExporter, LoggerEvent, ExportResult } from '../api';
 import { adaptToNodeConsole } from './console';
 
 export default class ConsoleExporterNode implements LoggerEventExporter {
