@@ -9,7 +9,7 @@ Acelogger is a light and powerful logger with tracing and metrics logging. It is
 opentelemetry, opentracing and other libraries, are hard to understand and use.
 
 1. too many concepts. TracerProvider, Tracer, SpanProcessor, Span, Logger, Event, Metric, MetricProvider etc.
-2. large size
+2. large code size
 
    1. @opentelemetry/tracing Minimized 39.9kb
    2. @opentelemetry/api Minimized 13.8kb
@@ -18,18 +18,19 @@ opentelemetry, opentracing and other libraries, are hard to understand and use.
 
 3. bad design
 
-   1. many circulation dependencies
+   1. circulation dependencies
    2. do not support tree shaking
 
-## Core Concept
+## Core Concepts
 
-The logging, tracing and metrics are events logged by logger, event have different alert level and event type.
+The logging, tracing and metrics will generate events which logged by logger,
+event have different alert level and event type.
 
-1. tracer is just the factory class for span
-2. span is just struct without methods
-3. logger use tracer to create span and span context
-4. logger create, record, sample and export events
-5. alert level includes: debug, info, warn, error
+1. tracer is just the factory class for span.
+2. logger use tracer to create span and span context.
+3. logger create, record, export events.
+4. define exporte with alert level, includes: debug, info, warn, error
+5. exporter will sample the events
 6. event type includes:
    1. log event, for message logging
    2. store, count and timing events, for metric reporting
@@ -46,21 +47,13 @@ $ npm install --save acelogger
 ## Example
 
 ```typescript
-import {
-  api,
-  Tracer,
+import ace, {
   ConsoleExporterWeb,
   AlertLevel,
   CanonicalCode,
   isMetricEvent
 } from 'acelogger';
 
-api.setTracer(
-  new Tracer({
-    name: 'demo.app',
-    version: '0.0.1'
-  })
-);
 api.tracer.setAttributes({
   os: 'MacOS',
   osVersion: '13.0'
@@ -119,6 +112,10 @@ spanLogger.endSpan({
 [See Details](./src/api)
 
 # ChangeLog
+
+## 2020-08-10 0.0.3
+
+- new singleton api
 
 ## 2020-08-02 0.0.2
 

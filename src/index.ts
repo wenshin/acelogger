@@ -1,6 +1,6 @@
-import api from './api';
-import Tracer from './Tracer';
-import Logger from './Logger';
+import { Manager } from './api';
+import SimpleLogger from './SimpleLogger';
+import SimpleTracer from './SimpleTracer';
 import ConsoleExporterWeb from './exporters/ConsoleExporterWeb';
 import ConsoleExporterNode from './exporters/ConsoleExporterNode';
 
@@ -8,12 +8,11 @@ export * from './api';
 export * from './consts';
 export * from './utils';
 
-api.setLogger(new Logger());
+export { ConsoleExporterWeb, ConsoleExporterNode, SimpleLogger, SimpleTracer };
 
-api.setTimer({
-  now(): number {
-    return Date.now();
-  }
-});
+const manager = new Manager();
 
-export { ConsoleExporterWeb, ConsoleExporterNode, Logger, Tracer, api };
+manager.setLogger(new SimpleLogger());
+manager.setTracer(new SimpleTracer());
+
+export default manager;

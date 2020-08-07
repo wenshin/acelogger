@@ -1,33 +1,14 @@
-import {
-  api,
-  Tracer,
-  ConsoleExporterWeb,
-  AlertLevel,
-  CanonicalCode
-} from '../src';
+import './init';
+import ace, { CanonicalCode } from '../src';
+import { myModuleAce } from './my-module';
 
-api.setTracer(
-  new Tracer({
-    name: 'demo.app',
-    version: '0.0.1'
-  })
-);
+ace.logger.debug('test debug');
+ace.logger.info('test info');
+ace.logger.warn('test warn');
+ace.logger.error(new Error('test error'));
 
-api.tracer.now = (): number => {
-  return performance.timeOrigin + performance.now();
-};
-
-// init logger exporter
-api.logger.setExporter(AlertLevel.Debug, new ConsoleExporterWeb());
-api.logger.setBufferSize(0);
-
-api.logger.debug('test debug');
-api.logger.info('test info');
-api.logger.warn('test warn');
-api.logger.error(new Error('test error'));
-
-const spanLogger = api.logger.startSpan('first.span', {
-  parent: api.tracer.createSpanContext()
+const spanLogger = ace.logger.startSpan('first.span', {
+  parent: ace.tracer.createSpanContext()
 });
 
 setTimeout(() => {
@@ -50,3 +31,9 @@ setTimeout(() => {
     status: CanonicalCode.UNKNOWN
   });
 }, 4000);
+
+// module logging
+myModuleAce.logger.debug('test module debug');
+myModuleAce.logger.info('test module info');
+myModuleAce.logger.warn('test module warn');
+myModuleAce.logger.error(new Error('test module error'));

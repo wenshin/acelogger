@@ -1,22 +1,16 @@
-import api, {
+import {
   Tracer,
   TracerStruct,
-  SpanStruct,
+  Span,
   SpanOptions,
   SpanContext,
   TimeInput,
   TraceFlags,
-  Attributes,
-  SpanKind
+  SpanKind,
+  Manager
 } from './api';
 import { getMillisecondsTime } from './utils';
-
-interface SimpleTracerConfig {
-  name: string;
-  version?: string;
-  startTime?: TimeInput;
-  attributes?: Attributes;
-}
+import SimpleSpan from './SimpleSpan';
 
 type SpanContextConfig = {
   traceId?: string;
@@ -40,35 +34,14 @@ function createTraceId(): string {
 }
 
 export default class SimpleTracer implements Tracer {
-  public name: string;
-  public version?: string;
-  public module?: string;
-  public moduleVersion?: string;
-  public startTime?: number;
-  public attributes?: Attributes;
-
-  constructor(config: SimpleTracerConfig) {
-    this.name = config.name;
-    this.version = config.version;
-    this.module = 'acelogger';
-    this.moduleVersion = '0.0.2';
-    this.attributes = config.attributes || {};
-    this.startTime = getMillisecondsTime(config.startTime) || api.timer.now();
-  }
+  public manager: Manager;
+  private data: TracerStruct = {
+    lib: 'acelogger@0.0.2',
+    startTime: Date.now()
+  };
 
   public toJSON(): TracerStruct {
-    return {
-      attributes: this.attributes,
-      module: this.module,
-      moduleVersion: this.moduleVersion,
-      name: this.name,
-      startTime: this.startTime,
-      version: this.version
-    };
-  }
-
-  public setAttributes(attrs: Attributes): void {
-    Object.assign(this.attributes, attrs);
+    return this.data;
   }
 
   public createSpanContext(ctx?: SpanContextConfig): SpanContext {
@@ -82,16 +55,25 @@ export default class SimpleTracer implements Tracer {
     };
   }
 
-  public createSpan(name: string, options?: SpanOptions): SpanStruct {
+  public createSpan(name: string, options?: SpanOptions): Span {
     const opt = options || {};
-    return {
+    const newOptions = {
       attributes: opt.attributes,
       context: this.createSpanContext(opt.parent),
       endTime: 0,
       kind: opt.kind || SpanKind.INTERNAL,
       name,
       parentContext: opt.parent,
-      startTime: getMillisecondsTime(opt.startTime) || api.timer.now()
+      startTime: getMillisecondsTime(opt.startTime) || this.manager.timer.now()
     };
+    return new SimpleSpan(newOptions);
+  }
+
+  public start(time: TimeInput): void {
+    this.data.startTime = getMillisecondsTime(time) || this.manager.timer.now();
+  }
+
+  public end(time: TimeInput): void {
+    this.data.endTime = getMillisecondsTime(time) || this.manager.timer.now();
   }
 }

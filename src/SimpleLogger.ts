@@ -1,8 +1,7 @@
-import api, {
-  SpanOptions,
+import {
   Logger,
   LoggerEvent,
-  SpanStruct,
+  Span,
   LoggerEventExporter,
   AlertLevel,
   EventType,
@@ -11,56 +10,35 @@ import api, {
   LoggerStoreEvent,
   ExportResult,
   SpanLogger,
-  Sampler,
-  CanonicalCode
+  CanonicalCode,
+  LoggerAttributes,
+  SpanStruct,
+  Manager,
+  SpanOptions
 } from './api';
 import { getMillisecondsTime } from './utils';
 
 export default class SimpleLogger implements Logger {
-  public span?: SpanStruct;
+  public manager: Manager;
+  public span?: Span;
+  private attributes: LoggerAttributes = {
+    app: 'unknown',
+    appVersion: '0',
+    lib: 'acelogger@0.0.2',
+    name: '',
+    version: ''
+  };
   private bufferSize: number = 10;
   private bufferCount: number = 0;
   private eventBuffer: Map<AlertLevel, LoggerEvent[]> = new Map();
   private exporterMap: Map<AlertLevel, LoggerEventExporter[]> = new Map();
-  private samplerMap: Map<AlertLevel, Sampler> = new Map();
 
-  public startSpan(name: string, options?: SpanOptions): SpanLogger {
-    const opts = this.span
-      ? {
-          ...options,
-          parent: this.span.context
-        }
-      : options;
-
-    const span = api.tracer.createSpan(name, opts);
-    const logger = new SimpleLogger();
-    logger.span = span;
-    logger.exporterMap = this.exporterMap;
-    logger.samplerMap = this.samplerMap;
-    logger.bufferSize = this.bufferSize;
-    logger.count(`${span.name}.start`);
-    return logger as SpanLogger;
+  public setAttributes(attrs: LoggerAttributes): void {
+    Object.assign(this.attributes, attrs);
   }
 
-  public endSpan(evt?: LoggerTimmingEvent): void {
-    if (!this.span) {
-      this.error(new Error('logger.endSpan must call after logger.startSpan'));
-      return;
-    }
-    this.span.endTime = getMillisecondsTime(evt && evt.time) || api.timer.now();
-
-    if (evt && evt.status) {
-      this.error(
-        new Error(`${this.span.name} failed with status ${evt.status}`),
-        evt
-      );
-    }
-    this.timing(
-      `${this.span.name}.end`,
-      this.span.endTime - this.span.startTime,
-      evt
-    );
-    this.count(`${this.span.name}.end`, evt);
+  public getAttributes(): LoggerAttributes {
+    return this.attributes;
   }
 
   public debug(message: string, evt?: LoggerEvent): void {
@@ -112,6 +90,45 @@ export default class SimpleLogger implements Logger {
     this.innerLog(AlertLevel.Info, `timing ${name} ${duration}ms`, e);
   }
 
+  public startSpan(name: string, options?: SpanOptions): SpanLogger {
+    const parentSpan = this.span && this.span.toJSON();
+    const opts = parentSpan
+      ? {
+          ...options,
+          parent: parentSpan.context
+        }
+      : options;
+
+    const span = this.manager.tracer.createSpan(name, opts);
+    const logger = new SimpleLogger();
+    logger.span = span;
+    logger.manager = this.manager;
+    logger.attributes = this.attributes;
+    logger.exporterMap = this.exporterMap;
+    logger.bufferSize = this.bufferSize;
+    logger.count(`${span.toJSON().name}.start`);
+    return logger as SpanLogger;
+  }
+
+  public endSpan(evt?: LoggerTimmingEvent): void {
+    if (!this.span) {
+      this.error(new Error('logger.endSpan must call after logger.startSpan'));
+      return;
+    }
+    const span = this.span.toJSON();
+    span.endTime =
+      getMillisecondsTime(evt && evt.time) || this.manager.timer.now();
+
+    if (evt && evt.status) {
+      this.error(
+        new Error(`${span.name} failed with status ${evt.status}`),
+        evt
+      );
+    }
+    this.timing(`${span.name}.end`, span.endTime - span.startTime, evt);
+    this.count(`${span.name}.end`, evt);
+  }
+
   public setExporter(level: AlertLevel, exportor: LoggerEventExporter): this {
     Object.keys(AlertLevel).forEach(l => {
       const levelValue = AlertLevel[l];
@@ -122,11 +139,6 @@ export default class SimpleLogger implements Logger {
         this.exporterMap.set(levelValue, arr);
       }
     });
-    return this;
-  }
-
-  public setSampler(level: AlertLevel, sampler: Sampler): this {
-    this.samplerMap.set(level, sampler);
     return this;
   }
 
@@ -155,7 +167,7 @@ export default class SimpleLogger implements Logger {
     if (typeof message === 'string' && message) {
       evt.message = message;
     } else if (message instanceof Error) {
-      evt.error = message;
+      evt.stack = message.stack;
       evt.message = message.message;
     }
 
@@ -164,29 +176,28 @@ export default class SimpleLogger implements Logger {
     }
 
     if (!evt.time) {
-      evt.time = api.timer.now();
+      evt.time = this.manager.timer.now();
     }
 
     try {
-      const tracer = api.tracer.toJSON();
-      const span = this.span || (({} as unknown) as SpanStruct);
+      const tracer = this.manager.tracer.toJSON();
+      const span = this.span
+        ? this.span.toJSON()
+        : (({} as unknown) as SpanStruct);
       evt.attributes = {
         ...evt.attributes,
         ...span.attributes,
+        app: this.attributes.app,
+        appVersion: this.attributes.appVersion,
+        loggerLib: this.attributes.lib,
+        loggerName: this.attributes.name || this.attributes.app,
+        loggerVersion: this.attributes.version || this.attributes.appVersion,
         spanId: span.context && span.context.spanId,
         spanKind: span.kind,
         spanName: span.name,
         traceId: span.context && span.context.traceId,
-        tracerModule: tracer.module,
-        tracerModuleVersion: tracer.moduleVersion,
-        tracerName: tracer.name,
-        tracerVersion: tracer.version
+        tracerLib: tracer.lib
       };
-
-      const sampler = this.samplerMap.get(level);
-      if (sampler && !sampler.shouldSample(span.context)) {
-        return;
-      }
 
       if (this.bufferSize <= 1) {
         this.export(evt.level, [evt]);

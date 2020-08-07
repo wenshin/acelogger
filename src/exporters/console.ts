@@ -4,7 +4,7 @@ function formatSection(evt: LoggerEvent): string {
   const attrs = evt.attributes || ({} as any);
   const spanName = attrs.spanName ? '|' + attrs.spanName : '';
   const spanId = attrs.spanId ? '|' + attrs.spanId : '';
-  return `[${attrs.tracerName}${spanId}${spanName}]`;
+  return `${attrs.loggerName}${spanId}${spanName}`;
 }
 
 export const AlertLevelTitleMap = {
@@ -19,9 +19,9 @@ export const AlertLevelTitleMap = {
  * @param evt
  */
 export function formatBrowserConsole(evt: LoggerEvent): any[] {
-  const statusColor = evt.level < AlertLevel.Warn ? '#00E676' : '#FF7043';
+  const statusColor = evt.level < AlertLevel.Warn ? '#bbbbbb' : '#FF7043';
   return [
-    `%c${formatSection(evt)} ${AlertLevelTitleMap[evt.level]}`,
+    `%c${AlertLevelTitleMap[evt.level]} ${formatSection(evt)}`,
     `font-weight: bold; color: ${statusColor};`,
     `"${evt.message || 'no message'}"`,
     evt
@@ -35,8 +35,8 @@ export function formatBrowserConsole(evt: LoggerEvent): any[] {
 export function formatNodeConsole(evt: LoggerEvent): any[] {
   const statusColor = evt.level < AlertLevel.Warn ? '32' : '31';
   return [
-    formatSection(evt),
     `\x1b[${statusColor}m${AlertLevelTitleMap[evt.level]}\x1b[0m`,
+    formatSection(evt),
     `"${evt.message || 'no message'}"`,
     evt
   ];

@@ -1,4 +1,4 @@
-import { Sampler, TimeInput } from './opentelemetry';
+import { TimeInput, Attributes } from './opentelemetry';
 import { AlertLevel } from './consts';
 import { LoggerEventExporter } from './LoggerEventExporter';
 import {
@@ -7,17 +7,40 @@ import {
   LoggerStoreEvent,
   LoggerTimmingEvent
 } from './LoggerEvent';
-import { SpanStruct, SpanOptions } from './Tracer';
+import { Span } from './Span';
+import { Manager } from './Manager';
+import { SpanOptions } from './Tracer';
 
 export type LogFunction = (message: string, evt?: LoggerEvent) => void;
 
-export type SpanLogger = Logger & { span: SpanStruct };
+export type SpanLogger = Logger & { span: Span };
+
+export interface LoggerAttributes extends Attributes {
+  app: string;
+  appVersion?: string;
+  // logger lib name and version, like acelogger@0.0.2
+  lib?: string;
+  // logger name, may be module name, default is app name
+  name?: string;
+  // logger version, may be module name, default is app version
+  version?: string;
+}
 
 export interface Logger {
+  manager: Manager;
   debug: LogFunction;
   info: LogFunction;
   warn: LogFunction;
   error(err: Error | string, evt?: LoggerEvent): void;
+
+  /**
+   * global tags for all logger events.
+   * the tags like appName, appVersion
+   * @param attrs
+   */
+  setAttributes(attrs: LoggerAttributes): void;
+
+  getAttributes(): LoggerAttributes;
 
   /**
    * create span and count span start event
@@ -65,13 +88,6 @@ export interface Logger {
    * @param evt
    */
   timing(name: string, duration: TimeInput, evt?: LoggerTimmingEvent): void;
-
-  /**
-   *
-   * @param level   the level which can use the smapler.
-   * @param sampler any opentelemetry Sampler implementions
-   */
-  setSampler(level: AlertLevel, sampler: Sampler): this;
 
   /**
    * @param level    great than the level will use the exporter.
