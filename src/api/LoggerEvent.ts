@@ -15,7 +15,7 @@ export interface EventAttributes extends Attributes {
   loggerName?: string;
   // logger version
   loggerVersion?: string;
-  // logger lib name and version, like acelogger@0.0.2s
+  // logger lib name and version, like acelogger@0.0.2
   loggerLib?: string;
   spanId: string;
   spanName: string;
