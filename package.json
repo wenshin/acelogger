@@ -9,7 +9,7 @@
   "license": "MIT",
   "keywords": [],
   "scripts": {
-    "prepublish": "git tag 1.0.3 &> /dev/null; npm run test:lint && npm run build && npm run test:unit-build",
+    "prepublish": "git tag 0.0.3 &> /dev/null; npm run test:lint && npm run build && npm run test:unit-build",
     "describe": "npm-scripts-info",
     "build": "run-s clean && run-p build:*",
     "build:main": "webpack --config webpack.es5.config.js",
