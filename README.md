@@ -98,16 +98,36 @@ spanLogger.endSpan({
 });
 ```
 
+## Module logger
+
+when logging in module, you can customize a scoped logger.
+
+```typescript
+import globaleAce, {
+  Manager,
+  SimpleTracer,
+  SimpleLogger,
+  AlertLevel,
+  ConsoleExporterWeb
+} from '../src';
+const manager = new Manager();
+
+manager.setLogger(new SimpleLogger());
+manager.setTracer(new SimpleTracer());
+manager.logger.setAttributes({
+  app: globaleAce.logger.getAttributes().app,
+  appVersion: globaleAce.logger.getAttributes().appVersion,
+  name: 'my-module'
+});
+
+// init logger exporter
+manager.logger.setExporter(AlertLevel.Debug, new ConsoleExporterWeb());
+manager.logger.setBufferSize(0);
+
+export { manager as ace };
+```
+
 ## API
-
-### LoggerEvent
-
-- logging message: debug, info, warn, error
-- logging tracing: startSpan, endSpan
-- logging metrics: store, count, timing
-- custom exporter: setExporter
-- custom sampler: setSampler
-- custom buffer size: setBufferSize
 
 [See Details](./src/api)
 
