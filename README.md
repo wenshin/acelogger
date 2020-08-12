@@ -1,6 +1,6 @@
 # Acelogger
 
-Acelogger is a light and powerful logger with tracing and metrics logging. It is inspired by opentelemetry-js api.
+Acelogger is a light and powerful logger with tracing and metrics logging. It is inspired by opentelemetry-js ace.
 
 # Design
 
@@ -54,7 +54,7 @@ import ace, {
   isMetricEvent
 } from 'acelogger';
 
-api.tracer.setAttributes({
+ace.logger.setAttributes({
   os: 'MacOS',
   osVersion: '13.0'
 });
@@ -67,31 +67,38 @@ class MetricExporterWeb implements LoggerEventExporter {
 }
 
 // set event exporter, for mesage logging
-api.logger.setExporter(AlertLevel.Debug, new ConsoleExporterWeb());
+ace.logger.setExporter(AlertLevel.Debug, new ConsoleExporterWeb());
 // set event exporter, for metric reportings
-api.logger.setExporter(AlertLevel.Debug, new MetricExporterWeb());
+ace.logger.setExporter(AlertLevel.Debug, new MetricExporterWeb());
 // export events immediately
-api.logger.setBufferSize(0);
+ace.logger.setBufferSize(0);
 
 // log info level message
-api.logger.info('test info');
-api.logger.store({
+ace.logger.info('test info');
+ace.logger.store({
   data: {
     memoryUsage: 0.1,
     cpuUsage: 0.5
   }
 });
-api.logger.count('button_click');
-api.logger.timming('fetch', 500, {
+ace.logger.count('button_click');
+ace.logger.timming('fetch', 500, {
   attributes: {
     url: 'https://demo.com'
   }
 });
 
 // creat a span logger
-const spanLogger = api.logger.startSpan('first.span', {
-  parent: api.tracer.createSpanContext()
+const spanLogger = ace.logger.startSpan('first.span', {
+  parent: ace.tracer.createSpanContext()
 });
+
+spanLogger.setAttributes({
+  path: '/path/to'
+});
+
+spanLogger.info('test info');
+spanLogger.count('http_request');
 
 spanLogger.endSpan({
   status: CanonicalCode.OK
