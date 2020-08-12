@@ -1,30 +1,20 @@
-import { TimeInput, Attributes } from './opentelemetry';
+import { TimeInput } from './opentelemetry';
 import { AlertLevel } from './consts';
 import { LoggerEventExporter } from './LoggerEventExporter';
 import {
   LoggerEvent,
   LoggerCountEvent,
   LoggerStoreEvent,
-  LoggerTimmingEvent
+  LoggerTimmingEvent,
+  LoggerAttributes
 } from './LoggerEvent';
-import { Span } from './Span';
+import { SpanStruct } from './Span';
 import { Manager } from './Manager';
 import { SpanOptions } from './Tracer';
 
 export type LogFunction = (message: string, evt?: LoggerEvent) => void;
 
-export type SpanLogger = Logger & { span: Span };
-
-export interface LoggerAttributes extends Attributes {
-  app: string;
-  appVersion?: string;
-  // logger lib name and version, like acelogger@0.0.2
-  lib?: string;
-  // logger name, may be module name, default is app name
-  name?: string;
-  // logger version, may be module name, default is app version
-  version?: string;
-}
+export type SpanLogger = Logger & { span: SpanStruct };
 
 export interface Logger {
   manager: Manager;
@@ -35,7 +25,7 @@ export interface Logger {
 
   /**
    * global tags for all logger events.
-   * the tags like appName, appVersion
+   * the tags like app name, app version
    * @param attrs
    */
   setAttributes(attrs: LoggerAttributes): void;

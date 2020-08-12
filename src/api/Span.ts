@@ -10,8 +10,3 @@ export interface SpanStruct {
   attributes?: Attributes;
   parentContext?: SpanContext;
 }
-
-export interface Span {
-  toJSON(): SpanStruct;
-  setAttributes(attrs: Attributes): void;
-}

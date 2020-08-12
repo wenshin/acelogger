@@ -1,7 +1,7 @@
 import { SpanOptions as TSpanOptions } from '@opentelemetry/api/build/src/trace/SpanOptions';
 import { TimeInput } from '@opentelemetry/api/build/src/common/Time';
 import { SpanContext } from './opentelemetry';
-import { Span } from './Span';
+import { SpanStruct } from './Span';
 import { Manager } from './Manager';
 
 export interface TracerStruct {
@@ -19,7 +19,7 @@ export interface Tracer {
   manager: Manager;
   toJSON(): TracerStruct;
   createSpanContext(...args: any[]): SpanContext;
-  createSpan(name: string, options?: SpanOptions): Span;
+  createSpan(name: string, options?: SpanOptions): SpanStruct;
   start(time?: TimeInput): void;
   end(time?: TimeInput): void;
 }

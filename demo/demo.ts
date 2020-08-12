@@ -12,6 +12,9 @@ const spanLogger = ace.logger.startSpan('first.span', {
 });
 
 setTimeout(() => {
+  spanLogger.setAttributes({
+    path: '/path/to/span'
+  });
   spanLogger.debug('test span debug');
   spanLogger.info('test span info');
   spanLogger.warn('test span warn');

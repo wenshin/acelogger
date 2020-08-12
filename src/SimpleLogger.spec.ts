@@ -51,7 +51,7 @@ beforeEach(() => {
 test('SimpleLogger::startSpan without remote context', () => {
   const tracer = ace.tracer.toJSON();
   const logger = ace.logger.startSpan('test.span1');
-  const span = logger.span.toJSON();
+  const span = logger.span;
   expect(span).toBeTruthy();
   expect(span.startTime).toBeTruthy();
   expect(span.context.spanId).toBe('1');
@@ -67,14 +67,14 @@ test('SimpleLogger::startSpan without remote context', () => {
   expect(args[0][0].attributes).toEqual({
     app: 'test-logger',
     appVersion: '0.0.1',
-    loggerLib: `${pkg.name}@${pkg.version}`,
-    loggerName: 'test-logger',
-    loggerVersion: '0.0.1',
+    lib: `${pkg.name}@${pkg.version}`,
+    name: 'test-logger',
     spanId: span.context.spanId,
     spanKind: SpanKind.INTERNAL,
     spanName: span.name,
     traceId: span.context.traceId,
-    tracerLib: tracer.lib
+    tracerLib: tracer.lib,
+    version: '0.0.1'
   });
   expect(args[0][0].name).toBe('test.span1.start');
   expect(args[0][0].message).toBe('count test.span1.start 1 times');
@@ -95,7 +95,7 @@ test('SimpleLogger::startSpan with remote context', () => {
     },
     startTime
   });
-  const spanData = logger.span.toJSON();
+  const spanData = logger.span;
   expect(spanData.startTime).toBe(startTime);
   expect(spanData.kind).toBe(SpanKind.SERVER);
 });
@@ -103,20 +103,27 @@ test('SimpleLogger::startSpan with remote context', () => {
 test('SimpleLogger::startSpan start sub span', () => {
   const logger1 = ace.logger.startSpan('test.span1');
   const logger2 = logger1.startSpan('test.span2');
-  expect((logger2 as any).attributes).toBe((logger1 as any).attributes);
-  const span2 = logger2.span.toJSON();
+  expect((logger1 as any).attributes).toEqual({
+    ...(logger2 as any).attributes,
+    spanId: '1',
+    spanName: 'test.span1'
+  });
+  expect((logger2 as any).attributes.spanId).toBe('1.1');
+  expect((logger2 as any).attributes.spanName).toBe('test.span2');
+
+  const span2 = logger2.span;
   expect(span2.context.spanId).toBe('1.1');
-  expect(span2.context.traceId).toBe(logger1.span.toJSON().context.traceId);
+  expect(span2.context.traceId).toBe(logger1.span.context.traceId);
 });
 
 test('SimpleLogger::endSpan without time option', () => {
   const tracer = ace.tracer.toJSON();
   const logger = ace.logger.startSpan('test.span');
-  logger.span.setAttributes({
+  logger.setAttributes({
     tag1: 'tag1',
     tag2: 'tag1'
   });
-  logger.span.setAttributes({
+  logger.setAttributes({
     tag2: 'tag2'
   });
   logger.endSpan();
@@ -125,22 +132,22 @@ test('SimpleLogger::endSpan without time option', () => {
   expect(mockExport.mock.calls.length).toBe(1);
 
   const evts = mockExport.mock.calls[0][0];
-  const span = logger.span.toJSON();
+  const span = logger.span;
   expect(evts.length).toBe(3);
   // timing end span
   expect(evts[1].attributes).toEqual({
     app: 'test-logger',
     appVersion: '0.0.1',
-    loggerLib: `${pkg.name}@${pkg.version}`,
-    loggerName: 'test-logger',
-    loggerVersion: '0.0.1',
+    lib: `${pkg.name}@${pkg.version}`,
+    name: 'test-logger',
     spanId: span.context.spanId,
     spanKind: SpanKind.INTERNAL,
     spanName: span.name,
     tag1: 'tag1',
     tag2: 'tag2',
     traceId: span.context.traceId,
-    tracerLib: tracer.lib
+    tracerLib: tracer.lib,
+    version: '0.0.1'
   });
   expect(evts[1].name).toBe('test.span.end');
   expect(evts[1].message).toBe(
@@ -168,7 +175,7 @@ test('SimpleLogger::endSpan with time option', () => {
 
   const evts = mockExport.mock.calls[0][0];
   expect(evts.length).toBe(3);
-  expect(evts[1].data).toBe(endTime - logger.span.toJSON().startTime);
+  expect(evts[1].data).toBe(endTime - logger.span.startTime);
 });
 
 test('SimpleLogger::endSpan with error status', () => {
@@ -270,14 +277,9 @@ test('SimpleLogger::setAttributes update logger name and version', () => {
   expect(evts[0].attributes).toEqual({
     app: 'test-logger',
     appVersion: '0.0.1',
-    loggerLib: `${pkg.name}@${pkg.version}`,
-    loggerName: 'test-logger',
-    loggerVersion: '0.0.1',
-    spanId: undefined,
-    spanKind: undefined,
-    spanName: undefined,
-    traceId: undefined,
-    tracerLib: `${pkg.name}@${pkg.version}`
+    lib: `${pkg.name}@${pkg.version}`,
+    name: 'test-logger',
+    version: '0.0.1'
   });
 });
 
@@ -287,7 +289,7 @@ test('SimpleLogger::getAttributes', () => {
     app: 'test-logger',
     appVersion: '0.0.1',
     lib: `${pkg.name}@${pkg.version}`,
-    name: '',
-    version: ''
+    name: 'test-logger',
+    version: '0.0.1'
   });
 });

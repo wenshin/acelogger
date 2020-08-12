@@ -6,21 +6,21 @@ import {
 } from './opentelemetry';
 import { AlertLevel, EventType } from './consts';
 
-export interface EventAttributes extends Attributes {
-  // the app name, example lark, doc
-  app: string;
-  // the app version
+export interface LoggerAttributes extends Attributes {
+  app?: string;
   appVersion?: string;
-  // logger name
-  loggerName?: string;
-  // logger version
-  loggerVersion?: string;
   // logger lib name and version, like acelogger@0.0.2
-  loggerLib?: string;
-  spanId: string;
-  spanName: string;
+  lib?: string;
+  // logger name, may be module name, default is app name
+  name?: string;
+  // logger version, may be module name, default is app version
+  version?: string;
+
+  // tracer attributes
+  spanId?: string;
+  spanName?: string;
   spanKind?: SpanKind;
-  traceId: string;
+  traceId?: string;
   // tracer lib name and version, ex. mytracer@0.0.2
   tracerLib?: string;
 }
@@ -32,7 +32,7 @@ export interface LoggerEvent {
   level?: AlertLevel;
   status?: CanonicalCode;
   // tags for event, always used to filter the event
-  attributes?: EventAttributes;
+  attributes?: LoggerAttributes;
   //  any data for log
   data?: any;
   // error message for event

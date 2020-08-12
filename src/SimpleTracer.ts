@@ -1,16 +1,15 @@
 import {
   Tracer,
   TracerStruct,
-  Span,
   SpanOptions,
   SpanContext,
   TimeInput,
   TraceFlags,
   SpanKind,
-  Manager
+  Manager,
+  SpanStruct
 } from './api';
 import { getMillisecondsTime } from './utils';
-import SimpleSpan from './SimpleSpan';
 
 type SpanContextConfig = {
   traceId?: string;
@@ -55,9 +54,9 @@ export default class SimpleTracer implements Tracer {
     };
   }
 
-  public createSpan(name: string, options?: SpanOptions): Span {
+  public createSpan(name: string, options?: SpanOptions): SpanStruct {
     const opt = options || {};
-    const newOptions = {
+    return {
       attributes: opt.attributes,
       context: this.createSpanContext(opt.parent),
       endTime: 0,
@@ -66,7 +65,6 @@ export default class SimpleTracer implements Tracer {
       parentContext: opt.parent,
       startTime: getMillisecondsTime(opt.startTime) || this.manager.timer.now()
     };
-    return new SimpleSpan(newOptions);
   }
 
   public start(time: TimeInput): void {

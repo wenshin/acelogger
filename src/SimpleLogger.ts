@@ -1,7 +1,6 @@
 import {
   Logger,
   LoggerEvent,
-  Span,
   LoggerEventExporter,
   AlertLevel,
   EventType,
@@ -20,10 +19,10 @@ import { getMillisecondsTime } from './utils';
 
 export default class SimpleLogger implements Logger {
   public manager: Manager;
-  public span?: Span;
+  public span?: SpanStruct;
   private attributes: LoggerAttributes = {
-    app: 'unknown',
-    appVersion: '0',
+    app: '',
+    appVersion: '',
     lib: 'acelogger@0.0.3',
     name: '',
     version: ''
@@ -35,6 +34,10 @@ export default class SimpleLogger implements Logger {
 
   public setAttributes(attrs: LoggerAttributes): void {
     Object.assign(this.attributes, attrs);
+    if (attrs.app && !this.attributes.name) {
+      this.attributes.name = attrs.app;
+      this.attributes.version = attrs.appVersion;
+    }
   }
 
   public getAttributes(): LoggerAttributes {
@@ -91,22 +94,30 @@ export default class SimpleLogger implements Logger {
   }
 
   public startSpan(name: string, options?: SpanOptions): SpanLogger {
-    const parentSpan = this.span && this.span.toJSON();
-    const opts = parentSpan
+    const opts = this.span
       ? {
           ...options,
-          parent: parentSpan.context
+          parent: this.span.context
         }
       : options;
 
     const span = this.manager.tracer.createSpan(name, opts);
+    const tracer = this.manager.tracer.toJSON();
     const logger = new SimpleLogger();
     logger.span = span;
     logger.manager = this.manager;
-    logger.attributes = this.attributes;
     logger.exporterMap = this.exporterMap;
     logger.bufferSize = this.bufferSize;
-    logger.count(`${span.toJSON().name}.start`);
+    logger.setAttributes({
+      ...this.attributes,
+      ...span.attributes,
+      spanId: span.context.spanId,
+      spanKind: span.kind,
+      spanName: span.name,
+      traceId: span.context.traceId,
+      tracerLib: tracer.lib
+    });
+    logger.count(`${span.name}.start`);
     return logger as SpanLogger;
   }
 
@@ -115,18 +126,22 @@ export default class SimpleLogger implements Logger {
       this.error(new Error('logger.endSpan must call after logger.startSpan'));
       return;
     }
-    const span = this.span.toJSON();
-    span.endTime =
+
+    this.span.endTime =
       getMillisecondsTime(evt && evt.time) || this.manager.timer.now();
 
     if (evt && evt.status) {
       this.error(
-        new Error(`${span.name} failed with status ${evt.status}`),
+        new Error(`${this.span.name} failed with status ${evt.status}`),
         evt
       );
     }
-    this.timing(`${span.name}.end`, span.endTime - span.startTime, evt);
-    this.count(`${span.name}.end`, evt);
+    this.timing(
+      `${this.span.name}.end`,
+      this.span.endTime - this.span.startTime,
+      evt
+    );
+    this.count(`${this.span.name}.end`, evt);
   }
 
   public setExporter(level: AlertLevel, exportor: LoggerEventExporter): this {
@@ -164,6 +179,11 @@ export default class SimpleLogger implements Logger {
     evt: LoggerEvent
   ): void {
     evt.level = level;
+    evt.attributes = {
+      ...this.attributes,
+      ...evt.attributes
+    };
+
     if (typeof message === 'string' && message) {
       evt.message = message;
     } else if (message instanceof Error) {
@@ -180,25 +200,6 @@ export default class SimpleLogger implements Logger {
     }
 
     try {
-      const tracer = this.manager.tracer.toJSON();
-      const span = this.span
-        ? this.span.toJSON()
-        : (({} as unknown) as SpanStruct);
-      evt.attributes = {
-        ...evt.attributes,
-        ...span.attributes,
-        app: this.attributes.app,
-        appVersion: this.attributes.appVersion,
-        loggerLib: this.attributes.lib,
-        loggerName: this.attributes.name || this.attributes.app,
-        loggerVersion: this.attributes.version || this.attributes.appVersion,
-        spanId: span.context && span.context.spanId,
-        spanKind: span.kind,
-        spanName: span.name,
-        traceId: span.context && span.context.traceId,
-        tracerLib: tracer.lib
-      };
-
       if (this.bufferSize <= 1) {
         this.export(evt.level, [evt]);
       } else {
