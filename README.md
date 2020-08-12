@@ -133,6 +133,10 @@ export { manager as ace };
 
 # ChangeLog
 
+## 2020-08-12 0.0.4
+
+- remove span methods
+
 ## 2020-08-10 0.0.3
 
 - new singleton api

@@ -1,6 +1,6 @@
 {
   "name": "acelogger",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "a logger with tracing, metrics inspired by opentelemetry-js API",
   "main": "build/main/index.js",
   "typings": "build/main/index.d.ts",
@@ -9,7 +9,7 @@
   "license": "MIT",
   "keywords": [],
   "scripts": {
-    "prepublish": "git tag 0.0.3 &> /dev/null; npm run test:lint && npm run build && npm run test:unit-build",
+    "prepublish": "git tag 0.0.4 &> /dev/null; npm run test:lint && npm run build && npm run test:unit-build",
     "describe": "npm-scripts-info",
     "build": "run-s clean && run-p build:*",
     "build:main": "webpack --config webpack.es5.config.js",
