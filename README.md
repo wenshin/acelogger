@@ -140,6 +140,10 @@ export { manager as ace };
 
 # ChangeLog
 
+## 2020-08-27 0.0.6
+
+- fix: build with no files
+
 ## 2020-08-27 0.0.5
 
 - fix: console logger name is undefined

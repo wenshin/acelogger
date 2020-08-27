@@ -23,7 +23,7 @@ export default class SimpleLogger implements Logger {
   private attributes: LoggerAttributes = {
     app: '',
     appVersion: '',
-    lib: 'acelogger@0.0.5',
+    lib: 'acelogger@0.0.6',
     name: '',
     version: ''
   };
