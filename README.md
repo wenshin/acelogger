@@ -140,6 +140,10 @@ export { manager as ace };
 
 # ChangeLog
 
+## 2020-08-27 0.0.5
+
+- fix: console logger name is undefined
+
 ## 2020-08-12 0.0.4
 
 - remove span methods
