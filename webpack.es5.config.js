@@ -7,8 +7,8 @@ module.exports = {
   mode: 'production',
   entry: path.resolve(__dirname, 'src/index.ts'),
   output: {
-    path: path.resolve(__dirname, 'build/main'),
-    filename: 'index.js',
+    path: path.resolve(__dirname, 'dist'),
+    filename: 'index.min.js',
     libraryTarget: 'umd'
   },
   module: {
