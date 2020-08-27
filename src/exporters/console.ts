@@ -4,7 +4,7 @@ function formatSection(evt: LoggerEvent): string {
   const attrs = evt.attributes || ({} as any);
   const spanName = attrs.spanName ? '|' + attrs.spanName : '';
   const spanId = attrs.spanId ? '|' + attrs.spanId : '';
-  return `${attrs.loggerName}${spanId}${spanName}`;
+  return `${attrs.name}${spanId}${spanName}`;
 }
 
 export const AlertLevelTitleMap = {
