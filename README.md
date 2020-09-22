@@ -1,6 +1,6 @@
 # Acelogger
 
-Acelogger is a light and powerful logger with tracing and metrics logging. It is inspired by opentelemetry-js ace.
+Acelogger is a light and powerful logger with tracing and metrics logging. It is inspired by opentelemetry-js.
 
 # Design
 
@@ -28,8 +28,8 @@ event have different alert level and event type.
 
 1. tracer is just the factory class for span.
 2. logger use tracer to create span and span context.
-3. logger create, record, export events.
-4. define exporte with alert level, includes: debug, info, warn, error
+3. logger can create, record and export events.
+4. define exporter with alert level, includes: debug, info, warn, error
 5. exporter will sample the events
 6. event type includes:
    1. log event, for message logging
@@ -105,7 +105,7 @@ spanLogger.endSpan({
 });
 ```
 
-## Module logger
+## Customize Logger
 
 when logging in module, you can customize a scoped logger.
 
