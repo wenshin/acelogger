@@ -111,16 +111,12 @@ when logging in module, you can customize a scoped logger.
 
 ```typescript
 import globaleAce, {
-  Manager,
-  SimpleTracer,
-  SimpleLogger,
+  SimpleManager,
   AlertLevel,
   ConsoleExporterWeb
 } from '../src';
-const manager = new Manager();
+const manager = new SimpleManager();
 
-manager.setLogger(new SimpleLogger());
-manager.setTracer(new SimpleTracer());
 manager.logger.setAttributes({
   app: globaleAce.logger.getAttributes().app,
   appVersion: globaleAce.logger.getAttributes().appVersion,
@@ -139,6 +135,10 @@ export { manager as ace };
 [See Details](./src/api)
 
 # ChangeLog
+
+## 2020-09-23 0.1.0
+
+- refactor: new Manager api
 
 ## 2020-08-27 0.0.6
 

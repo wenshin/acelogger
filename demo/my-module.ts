@@ -1,14 +1,6 @@
-import ace, {
-  Manager,
-  SimpleTracer,
-  SimpleLogger,
-  AlertLevel,
-  ConsoleExporterWeb
-} from '../src';
-const manager = new Manager();
+import ace, { AlertLevel, ConsoleExporterWeb, SimpleManager } from '../src';
+const manager = new SimpleManager();
 
-manager.setLogger(new SimpleLogger());
-manager.setTracer(new SimpleTracer());
 manager.logger.setAttributes({
   app: ace.logger.getAttributes().app,
   appVersion: ace.logger.getAttributes().appVersion,

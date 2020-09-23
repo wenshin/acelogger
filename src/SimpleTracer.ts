@@ -35,7 +35,7 @@ function createTraceId(): string {
 export default class SimpleTracer implements Tracer {
   public manager: Manager;
   private data: TracerStruct = {
-    lib: 'acelogger@0.0.6',
+    lib: 'acelogger@0.1.0',
     startTime: Date.now()
   };
 
