@@ -136,6 +136,10 @@ export { manager as ace };
 
 # ChangeLog
 
+## 2020-09-23 0.1.1
+
+- remove unsafe dependencies
+
 ## 2020-09-23 0.1.0
 
 - refactor: new Manager api
