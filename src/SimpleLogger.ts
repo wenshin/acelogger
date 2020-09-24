@@ -6,7 +6,6 @@ import {
   EventType,
   LoggerTimmingEvent,
   LoggerCountEvent,
-  LoggerStoreEvent,
   ExportResult,
   SpanLogger,
   CanonicalCode,
@@ -15,8 +14,24 @@ import {
   Manager,
   SpanOptions
 } from './api';
-import { getMillisecondsTime } from './utils';
+import { getAlertLevelByStatus, getMillisecondsTime } from './utils';
 
+/**
+ * 1. Start event
+ *   1. have a count event
+ *   2. level：Info
+ * 2. End event
+ *   1. have Timing & Count events
+ *   2. level：level || Info
+ * 3. Log Event
+ *   1. level：level
+ * 4. Store Event
+ *   1. level：level || Debug
+ * 5. Timing Event
+ *   1. level：level || Debug
+ * 6. Count Event
+ *   1. level：level || Debug
+ */
 export default class SimpleLogger implements Logger {
   public manager: Manager;
   public span?: SpanStruct;
@@ -60,19 +75,30 @@ export default class SimpleLogger implements Logger {
     this.innerLog(AlertLevel.Error, error, { ...evt });
   }
 
-  public store(evt: LoggerStoreEvent): void {
+  public store(evt: LoggerEvent): void {
     evt.type = EventType.Store;
-    this.innerLog(AlertLevel.Info, `store ${Object.keys(evt.data)} metrics`, {
-      ...evt
-    });
+    const msg = evt.message ? `, ${evt.message}` : '';
+    this.innerLog(
+      evt.level || AlertLevel.Debug,
+      `store ${JSON.stringify(evt.data)} metrics${msg}`,
+      {
+        ...evt
+      }
+    );
   }
 
   public count(name: string, evt?: LoggerCountEvent): void {
     const e = { ...evt };
     e.name = name;
-    e.data = e.data || 1;
+    e.data = e.data || { count: 1 };
     e.type = EventType.Count;
-    this.innerLog(AlertLevel.Info, `count ${name} ${e.data} times`, e);
+
+    const msg = e.message ? `, ${e.message}` : '';
+    this.innerLog(
+      e.level || AlertLevel.Debug,
+      `count ${name} ${e.data.count} times${msg}`,
+      e
+    );
   }
 
   /**
@@ -88,11 +114,19 @@ export default class SimpleLogger implements Logger {
   ): void {
     const e = { ...evt };
     e.name = name;
-    e.data = duration;
+    e.data = { timing: duration };
     e.type = EventType.Timing;
-    this.innerLog(AlertLevel.Info, `timing ${name} ${duration}ms`, e);
+
+    const msg = e.message ? `, ${e.message}` : '';
+    this.innerLog(
+      e.level || AlertLevel.Debug,
+      `timing ${name} ${duration}ms${msg}`,
+      e
+    );
   }
 
+  // startSpan, throw start event
+  // endSpan, throw end event with duration
   public startSpan(name: string, options?: SpanOptions): SpanLogger {
     const opts = this.span
       ? {
@@ -117,31 +151,35 @@ export default class SimpleLogger implements Logger {
       traceId: span.context.traceId,
       tracerLib: tracer.lib
     });
-    logger.count(`${span.name}.start`);
+    logger.info(`${span.name}.start`, {
+      name: `${span.name}.start`,
+      type: EventType.Start
+    });
     return logger as SpanLogger;
   }
 
-  public endSpan(evt?: LoggerTimmingEvent): void {
+  public endSpan(evt?: LoggerEvent): void {
     if (!this.span) {
       this.error(new Error('logger.endSpan must call after logger.startSpan'));
       return;
     }
 
-    this.span.endTime =
-      getMillisecondsTime(evt && evt.time) || this.manager.timer.now();
+    const e = {
+      name: `${this.span.name}.end`,
+      type: EventType.End,
+      ...evt
+    };
 
-    if (evt && evt.status) {
-      this.error(
-        new Error(`${this.span.name} failed with status ${evt.status}`),
-        evt
-      );
-    }
-    this.timing(
-      `${this.span.name}.end`,
-      this.span.endTime - this.span.startTime,
-      evt
-    );
-    this.count(`${this.span.name}.end`, evt);
+    this.span.endTime = getMillisecondsTime(e.time) || this.manager.timer.now();
+
+    e.level = e.level || AlertLevel.Info;
+    e.data = {
+      duration: this.span.endTime - this.span.startTime,
+      ...e.data
+    };
+
+    const msg = e.message ? `: ${e.message}` : '';
+    this.innerLog(e.level || AlertLevel.Info, `${this.span.name}.end${msg}`, e);
   }
 
   public setExporter(level: AlertLevel, exportor: LoggerEventExporter): this {
@@ -178,7 +216,6 @@ export default class SimpleLogger implements Logger {
     message: string | Error,
     evt: LoggerEvent
   ): void {
-    evt.level = level;
     evt.attributes = {
       ...this.attributes,
       ...evt.attributes
@@ -194,6 +231,8 @@ export default class SimpleLogger implements Logger {
     if (!evt.status) {
       evt.status = CanonicalCode.OK;
     }
+
+    evt.level = Math.max(getAlertLevelByStatus(evt.status), level);
 
     if (!evt.time) {
       evt.time = this.manager.timer.now();

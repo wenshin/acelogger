@@ -30,11 +30,14 @@ export interface LoggerEvent {
   name?: string;
   type?: EventType;
   level?: AlertLevel;
-  status?: CanonicalCode;
   // tags for event, always used to filter the event
   attributes?: LoggerAttributes;
-  //  any data for log
-  data?: any;
+  //  any object data
+  data?: {
+    [key: string]: any;
+  };
+  // error status code
+  status?: CanonicalCode;
   // error message for event
   message?: string;
   // error stack, only exist when level is EventLevel.Error
@@ -44,15 +47,13 @@ export interface LoggerEvent {
 }
 
 export interface LoggerCountEvent extends LoggerEvent {
-  data?: number;
+  data?: {
+    count: number;
+  };
 }
 
 export interface LoggerTimmingEvent extends LoggerEvent {
-  data?: number;
-}
-
-export interface LoggerStoreEvent extends LoggerEvent {
   data?: {
-    [key: string]: number;
+    timing: number;
   };
 }

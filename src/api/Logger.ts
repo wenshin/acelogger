@@ -4,7 +4,6 @@ import { LoggerEventExporter } from './LoggerEventExporter';
 import {
   LoggerEvent,
   LoggerCountEvent,
-  LoggerStoreEvent,
   LoggerTimmingEvent,
   LoggerAttributes
 } from './LoggerEvent';
@@ -62,7 +61,7 @@ export interface Logger {
    * })
    * ```
    */
-  store(evt: LoggerStoreEvent): void;
+  store(evt: LoggerEvent): void;
 
   /**
    * count event, like dau, mau, pv, uv etc

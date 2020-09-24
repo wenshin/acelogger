@@ -1,4 +1,10 @@
-import { TimeInput, LoggerEvent, EventType } from './api';
+import {
+  TimeInput,
+  LoggerEvent,
+  EventType,
+  CanonicalCode,
+  AlertLevel
+} from './api';
 
 export function isTimeInputHrTime(time: TimeInput): boolean {
   return Array.isArray(time) && time.length === 2;
@@ -17,4 +23,17 @@ export function isMetricEvent(evt: LoggerEvent): boolean {
       evt.type === EventType.Store ||
       evt.type === EventType.Timing)
   );
+}
+
+export function getAlertLevelByStatus(status: CanonicalCode): AlertLevel {
+  switch (status) {
+    case CanonicalCode.OK:
+      return AlertLevel.Debug;
+    case CanonicalCode.INTERNAL:
+    case CanonicalCode.RESOURCE_EXHAUSTED:
+    case CanonicalCode.UNAVAILABLE:
+      return AlertLevel.Error;
+    default:
+      return AlertLevel.Warn;
+  }
 }
