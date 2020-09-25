@@ -271,6 +271,18 @@ test('SimpleLogger::store', () => {
   });
 });
 
+test('SimpleLogger::store without message', () => {
+  ace.logger.store({
+    data: {
+      cpuUsage: 0.1
+    },
+    name: 'performance'
+  });
+  ace.logger.flush();
+  const evts = mockExport.mock.calls[0][0];
+  expect(evts[0].message).toBe('store {"cpuUsage":0.1} metrics');
+});
+
 test('SimpleLogger::count no event params', () => {
   ace.logger.count('test-count');
   ace.logger.flush();
@@ -303,7 +315,7 @@ test('SimpleLogger::timing no event params', () => {
   expect(evts[0].message).toBe('timing test-timing 1000ms');
   expect(evts[0].level).toBe(AlertLevel.Debug);
   expect(evts[0].data).toEqual({
-    timing: 1000
+    duration: 1000
   });
 });
 
@@ -319,7 +331,7 @@ test('SimpleLogger::timing with event params', () => {
   );
   expect(evts[0].level).toBe(AlertLevel.Error);
   expect(evts[0].data).toEqual({
-    timing: 1000
+    duration: 1000
   });
 });
 

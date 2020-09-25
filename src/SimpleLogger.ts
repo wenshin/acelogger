@@ -114,7 +114,7 @@ export default class SimpleLogger implements Logger {
   ): void {
     const e = { ...evt };
     e.name = name;
-    e.data = { timing: duration };
+    e.data = { duration };
     e.type = EventType.Timing;
 
     const msg = e.message ? `, ${e.message}` : '';
@@ -179,7 +179,7 @@ export default class SimpleLogger implements Logger {
     };
 
     const msg = e.message ? `: ${e.message}` : '';
-    this.innerLog(e.level || AlertLevel.Info, `${this.span.name}.end${msg}`, e);
+    this.innerLog(e.level, `${this.span.name}.end${msg}`, e);
   }
 
   public setExporter(level: AlertLevel, exportor: LoggerEventExporter): this {

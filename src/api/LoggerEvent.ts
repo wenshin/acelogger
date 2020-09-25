@@ -54,6 +54,6 @@ export interface LoggerCountEvent extends LoggerEvent {
 
 export interface LoggerTimmingEvent extends LoggerEvent {
   data?: {
-    timing: number;
+    duration: number;
   };
 }

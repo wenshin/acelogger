@@ -19,7 +19,9 @@ export function getMillisecondsTime(time: TimeInput): number {
 export function isMetricEvent(evt: LoggerEvent): boolean {
   return (
     evt &&
-    (evt.type === EventType.Count ||
+    (evt.type === EventType.Start ||
+      evt.type === EventType.End ||
+      evt.type === EventType.Count ||
       evt.type === EventType.Store ||
       evt.type === EventType.Timing)
   );
