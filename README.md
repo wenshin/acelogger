@@ -136,6 +136,10 @@ export { manager as ace };
 
 # ChangeLog
 
+## 2020-09-23 0.2.1
+
+- refactor isMetricEvent
+
 ## 2020-09-23 0.2.0
 
 - break change SimpleLogger api, to reduce duplicate logs
