@@ -114,7 +114,7 @@ import globaleAce, {
   SimpleManager,
   AlertLevel,
   ConsoleExporterWeb
-} from '../src';
+} from 'acelogger';
 const manager = new SimpleManager();
 
 manager.logger.setAttributes({
@@ -130,48 +130,80 @@ manager.logger.setBufferSize(0);
 export { manager as ace };
 ```
 
+## Customize Exporter
+
+you can customize a exporter
+
+```typescript
+import ace, { TraceFlags, SimpleManager, AlertLevel, ConsoleExporterWeb, isMetricEvent } from 'acelogger';
+
+// init logger exporter
+manager.logger.setExporter(AlertLevel.Debug, {
+  export(
+    events: LoggerEvent[],
+    resultCallback: (result: ExportResult) => void
+  ): void {
+    for (const evt of events) {
+      if (evt.traceFlags === TraceFlags.SAMPLED && !isSimpled(evt)) {
+        return;
+      }
+      if (isMetricEvent(evt)) {
+        logMetric(evt);
+      } else {
+        log(evt)
+      }
+    }
+  };
+});
+```
+
 ## API
 
 [See Details](./src/api)
 
 # ChangeLog
 
-## 2020-09-23 0.2.1
+#### 2020-09-23 0.2.2
+
+- add traceFlags for LoggerEvent, which can get sampled flag
+- change endSpan message format, now have duration and customized message
+
+#### 2020-09-23 0.2.1
 
 - refactor isMetricEvent
 
-## 2020-09-23 0.2.0
+#### 2020-09-23 0.2.0
 
 - break change SimpleLogger api, to reduce duplicate logs
 
-## 2020-09-23 0.1.1
+#### 2020-09-23 0.1.1
 
 - remove unsafe dependencies
 
-## 2020-09-23 0.1.0
+#### 2020-09-23 0.1.0
 
 - refactor: new Manager api
 
-## 2020-08-27 0.0.6
+#### 2020-08-27 0.0.6
 
 - fix: build with no files
 
-## 2020-08-27 0.0.5
+#### 2020-08-27 0.0.5
 
 - fix: console logger name is undefined
 
-## 2020-08-12 0.0.4
+#### 2020-08-12 0.0.4
 
 - remove span methods
 
-## 2020-08-10 0.0.3
+#### 2020-08-10 0.0.3
 
 - new singleton api
 
-## 2020-08-02 0.0.2
+#### 2020-08-02 0.0.2
 
 - fix opentelemetry-api do not support tree shaking problem
 
-## 2020-08-02 0.0.1
+#### 2020-08-02 0.0.1
 
 - first version with logger and tracer
