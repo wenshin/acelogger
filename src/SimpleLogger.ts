@@ -178,8 +178,12 @@ export default class SimpleLogger implements Logger {
       ...e.data
     };
 
-    const msg = e.message ? `: ${e.message}` : '';
-    this.innerLog(e.level, `${this.span.name}.end${msg}`, e);
+    const msg = e.message ? `, ${e.message}` : '';
+    this.innerLog(
+      e.level,
+      `${this.span.name} end with ${e.data.duration}ms${msg}`,
+      e
+    );
   }
 
   public setExporter(level: AlertLevel, exportor: LoggerEventExporter): this {
@@ -216,6 +220,13 @@ export default class SimpleLogger implements Logger {
     message: string | Error,
     evt: LoggerEvent
   ): void {
+    if (this.span) {
+      evt.traceFlags =
+        evt.traceFlags === undefined || evt.traceFlags === null
+          ? this.span.context.traceFlags
+          : evt.traceFlags;
+    }
+
     evt.attributes = {
       ...this.attributes,
       ...evt.attributes

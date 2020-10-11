@@ -5,6 +5,7 @@ import {
   SpanKind
 } from './opentelemetry';
 import { AlertLevel, EventType } from './consts';
+import { TraceFlags } from '@opentelemetry/api/build/src/trace/trace_flags';
 
 export interface LoggerAttributes extends Attributes {
   app?: string;
@@ -30,6 +31,7 @@ export interface LoggerEvent {
   name?: string;
   type?: EventType;
   level?: AlertLevel;
+  traceFlags?: TraceFlags;
   // tags for event, always used to filter the event
   attributes?: LoggerAttributes;
   //  any object data

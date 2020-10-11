@@ -57,6 +57,7 @@ test('SimpleLogger::startSpan without remote context', () => {
   expect(span.startTime).toBeTruthy();
   expect(span.context.spanId).toBe('1');
   expect(span.context.traceId).toBeTruthy();
+  expect(span.context.traceFlags).toBe(TraceFlags.NONE);
 
   // event is in buffer
   expect(mockExport.mock.calls.length).toBe(0);
@@ -81,6 +82,7 @@ test('SimpleLogger::startSpan without remote context', () => {
   expect(args[0][0].message).toBe('test.span1.start');
   expect(args[0][0].level).toBe(AlertLevel.Info);
   expect(args[0][0].data).toBe(undefined);
+  expect(args[0][0].traceFlags).toBe(TraceFlags.NONE);
   expect(args[0][0].status).toBe(CanonicalCode.OK);
   expect(args[0][0].type).toBe(EventType.Start);
 });
@@ -91,7 +93,7 @@ test('SimpleLogger::startSpan with remote context', () => {
     kind: SpanKind.SERVER,
     parent: {
       spanId: '1.1',
-      traceFlags: TraceFlags.NONE,
+      traceFlags: TraceFlags.SAMPLED,
       traceId: '123'
     },
     startTime
@@ -99,6 +101,10 @@ test('SimpleLogger::startSpan with remote context', () => {
   const spanData = logger.span;
   expect(spanData.startTime).toBe(startTime);
   expect(spanData.kind).toBe(SpanKind.SERVER);
+
+  logger.flush();
+  const args = mockExport.mock.calls[0];
+  expect(args[0][0].traceFlags).toBe(TraceFlags.SAMPLED);
 });
 
 test('SimpleLogger::startSpan start sub span', () => {
@@ -151,7 +157,9 @@ test('SimpleLogger::endSpan without event argument', () => {
     version: '0.0.1'
   });
   expect(evts[1].name).toBe('test.span.end');
-  expect(evts[1].message).toBe('test.span.end');
+  expect(evts[1].message).toBe(
+    `test.span end with ${logger.span.endTime - logger.span.startTime}ms`
+  );
   expect(evts[1].level).toBe(AlertLevel.Info);
   expect(evts[1].data).toEqual({ duration: span.endTime - span.startTime });
   expect(evts[1].status).toBe(CanonicalCode.OK);
@@ -165,15 +173,20 @@ test('SimpleLogger::endSpan with event argument', () => {
     level: AlertLevel.Error,
     message: 'endSpan message',
     status: CanonicalCode.NOT_FOUND,
-    time: endTime
+    time: endTime,
+    traceFlags: TraceFlags.SAMPLED
   });
   logger.flush();
 
   expect(mockExport.mock.calls.length).toBe(2);
 
   const endEvent = mockExport.mock.calls[1][0][0];
-  expect(endEvent.message).toBe('test.span.end: endSpan message');
+  expect(endEvent.message).toBe(
+    `test.span end with ${logger.span.endTime -
+      logger.span.startTime}ms, endSpan message`
+  );
   expect(endEvent.level).toBe(AlertLevel.Error);
+  expect(endEvent.traceFlags).toBe(TraceFlags.SAMPLED);
   expect(endEvent.status).toBe(CanonicalCode.NOT_FOUND);
   expect(endEvent.data).toEqual({
     duration: endTime - logger.span.startTime
@@ -229,6 +242,7 @@ test('SimpleLogger log message whitout span', () => {
     expect(evts[0].name).toBeFalsy();
     expect(evts[0].message).toBe('test ' + levels[i]);
     expect(evts[0].level).toBe(i);
+    expect(evts[0].traceFlags).toBe(undefined);
     expect(evts[0].data).toEqual({
       test: levels[i]
     });
@@ -236,6 +250,15 @@ test('SimpleLogger log message whitout span', () => {
       expect(evts[0].stack).toBeTruthy();
     }
   }
+});
+
+test('SimpleLogger log with traceFlag', () => {
+  ace.logger.info('test set buffer size', {
+    traceFlags: TraceFlags.SAMPLED
+  });
+  ace.logger.flush();
+  const evts = mockExport.mock.calls[0][0];
+  expect(evts[0].traceFlags).toBe(TraceFlags.SAMPLED);
 });
 
 test('SimpleLogger::setBufferSize set buffer size to 0', () => {
