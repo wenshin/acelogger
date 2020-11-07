@@ -29,7 +29,7 @@ event have different alert level and event type.
 1. tracer is just the factory class for span.
 2. logger use tracer to create span and span context.
 3. logger can create, record and export events.
-4. define exporter with alert level, includes: debug, info, warn, error
+4. define exporter with alert level, includes: debug, info, warn, error, fatal
 5. exporter will sample the events
 6. event type includes:
    1. log event, for message logging
@@ -162,6 +162,12 @@ manager.logger.setExporter(AlertLevel.Debug, {
 [See Details](./src/api)
 
 # ChangeLog
+
+#### 2020-09-23 0.3.0
+
+- add fatal for Logger
+- Logger.count only record 1 time
+- LoggerEvent add metrics property and data property will without metrics
 
 #### 2020-09-23 0.2.2
 

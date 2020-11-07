@@ -34,6 +34,10 @@ export interface LoggerEvent {
   traceFlags?: TraceFlags;
   // tags for event, always used to filter the event
   attributes?: LoggerAttributes;
+  // metric data
+  metrics?: {
+    [key: string]: string | number;
+  };
   //  any object data
   data?: {
     [key: string]: any;

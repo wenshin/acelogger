@@ -8,8 +8,14 @@ export enum EventType {
 }
 
 export enum AlertLevel {
+  // some code debug informations
   Debug,
+  // user events
   Info,
+  // app have may have error
   Warn,
-  Error
+  // app have error and not crashed
+  Error,
+  // app crashed
+  Fatal
 }

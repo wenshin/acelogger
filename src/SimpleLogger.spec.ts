@@ -81,7 +81,7 @@ test('SimpleLogger::startSpan without remote context', () => {
   expect(args[0][0].name).toBe('test.span1.start');
   expect(args[0][0].message).toBe('test.span1.start');
   expect(args[0][0].level).toBe(AlertLevel.Info);
-  expect(args[0][0].data).toBe(undefined);
+  expect(args[0][0].metrics).toBe(undefined);
   expect(args[0][0].traceFlags).toBe(TraceFlags.NONE);
   expect(args[0][0].status).toBe(CanonicalCode.OK);
   expect(args[0][0].type).toBe(EventType.Start);
@@ -98,9 +98,9 @@ test('SimpleLogger::startSpan with remote context', () => {
     },
     startTime
   });
-  const spanData = logger.span;
-  expect(spanData.startTime).toBe(startTime);
-  expect(spanData.kind).toBe(SpanKind.SERVER);
+  const spanmetrics = logger.span;
+  expect(spanmetrics.startTime).toBe(startTime);
+  expect(spanmetrics.kind).toBe(SpanKind.SERVER);
 
   logger.flush();
   const args = mockExport.mock.calls[0];
@@ -161,7 +161,9 @@ test('SimpleLogger::endSpan without event argument', () => {
     `test.span end with ${logger.span.endTime - logger.span.startTime}ms`
   );
   expect(evts[1].level).toBe(AlertLevel.Info);
-  expect(evts[1].data).toEqual({ duration: span.endTime - span.startTime });
+  expect(evts[1].metrics).toEqual({
+    'test.span.duration': span.endTime - span.startTime
+  });
   expect(evts[1].status).toBe(CanonicalCode.OK);
   expect(evts[1].type).toBe(EventType.End);
 });
@@ -188,8 +190,8 @@ test('SimpleLogger::endSpan with event argument', () => {
   expect(endEvent.level).toBe(AlertLevel.Error);
   expect(endEvent.traceFlags).toBe(TraceFlags.SAMPLED);
   expect(endEvent.status).toBe(CanonicalCode.NOT_FOUND);
-  expect(endEvent.data).toEqual({
-    duration: endTime - logger.span.startTime
+  expect(endEvent.metrics).toEqual({
+    'test.span.duration': endTime - logger.span.startTime
   });
 });
 
@@ -221,32 +223,35 @@ test('SimpleLogger::endSpan whitout span', () => {
 
 test('SimpleLogger log message whitout span', () => {
   ace.logger.debug('test debug', {
-    data: { test: 'debug' }
+    metrics: { test: 'debug' }
   });
   ace.logger.info('test info', {
-    data: { test: 'info' }
+    metrics: { test: 'info' }
   });
   ace.logger.warn('test warn', {
-    data: { test: 'warn' }
+    metrics: { test: 'warn' }
   });
   ace.logger.error(new Error('test error'), {
-    data: { test: 'error' }
+    metrics: { test: 'error' }
+  });
+  ace.logger.fatal(new Error('test fatal'), {
+    metrics: { test: 'fatal' }
   });
   ace.logger.flush();
 
-  expect(mockExport.mock.calls.length).toBe(4);
+  expect(mockExport.mock.calls.length).toBe(5);
 
-  const levels = ['debug', 'info', 'warn', 'error'];
+  const levels = ['debug', 'info', 'warn', 'error', 'fatal'];
   for (let i = 0; i < 4; i++) {
     const evts = mockExport.mock.calls[i][0];
     expect(evts[0].name).toBeFalsy();
     expect(evts[0].message).toBe('test ' + levels[i]);
     expect(evts[0].level).toBe(i);
     expect(evts[0].traceFlags).toBe(undefined);
-    expect(evts[0].data).toEqual({
+    expect(evts[0].metrics).toEqual({
       test: levels[i]
     });
-    if (levels[i] === 'error') {
+    if (levels[i] === 'error' || levels[i] === 'fatal') {
       expect(evts[0].stack).toBeTruthy();
     }
   }
@@ -276,45 +281,41 @@ test('SimpleLogger buffer is full', () => {
 
 test('SimpleLogger::store', () => {
   ace.logger.store({
-    data: {
+    message: 'test-store-message',
+    metrics: {
       cpuUsage: 0.1
     },
-    message: 'test-store-message',
     name: 'performance'
   });
   ace.logger.flush();
   const evts = mockExport.mock.calls[0][0];
   expect(evts[0].name).toBe('performance');
-  expect(evts[0].message).toBe(
-    'store {"cpuUsage":0.1} metrics, test-store-message'
-  );
+  expect(evts[0].message).toBe('store {"cpuUsage":0.1}, test-store-message');
   expect(evts[0].level).toBe(AlertLevel.Debug);
-  expect(evts[0].data).toEqual({
+  expect(evts[0].metrics).toEqual({
     cpuUsage: 0.1
   });
 });
 
 test('SimpleLogger::store without message', () => {
   ace.logger.store({
-    data: {
+    metrics: {
       cpuUsage: 0.1
     },
     name: 'performance'
   });
   ace.logger.flush();
   const evts = mockExport.mock.calls[0][0];
-  expect(evts[0].message).toBe('store {"cpuUsage":0.1} metrics');
+  expect(evts[0].message).toBe('store {"cpuUsage":0.1}');
 });
 
 test('SimpleLogger::count no event params', () => {
   ace.logger.count('test-count');
   ace.logger.flush();
   const evts = mockExport.mock.calls[0][0];
-  expect(evts[0].message).toBe('count test-count 1 times');
+  expect(evts[0].message).toBe('count test-count');
   expect(evts[0].level).toBe(AlertLevel.Debug);
-  expect(evts[0].data).toEqual({
-    count: 1
-  });
+  expect(evts[0].metrics).toEqual(undefined);
 });
 
 test('SimpleLogger::count with event params', () => {
@@ -324,11 +325,9 @@ test('SimpleLogger::count with event params', () => {
   });
   ace.logger.flush();
   const evts = mockExport.mock.calls[0][0];
-  expect(evts[0].message).toBe('count test-count 1 times, test-count-message');
+  expect(evts[0].message).toBe('count test-count, test-count-message');
   expect(evts[0].level).toBe(AlertLevel.Warn);
-  expect(evts[0].data).toEqual({
-    count: 1
-  });
+  expect(evts[0].metrics).toEqual(undefined);
 });
 
 test('SimpleLogger::timing no event params', () => {
@@ -337,8 +336,8 @@ test('SimpleLogger::timing no event params', () => {
   const evts = mockExport.mock.calls[0][0];
   expect(evts[0].message).toBe('timing test-timing 1000ms');
   expect(evts[0].level).toBe(AlertLevel.Debug);
-  expect(evts[0].data).toEqual({
-    duration: 1000
+  expect(evts[0].metrics).toEqual({
+    'test-timing': 1000
   });
 });
 
@@ -353,14 +352,14 @@ test('SimpleLogger::timing with event params', () => {
     'timing test-timing 1000ms, test-timing-message'
   );
   expect(evts[0].level).toBe(AlertLevel.Error);
-  expect(evts[0].data).toEqual({
-    duration: 1000
+  expect(evts[0].metrics).toEqual({
+    'test-timing': 1000
   });
 });
 
 test('SimpleLogger::setAttributes update logger name and version', () => {
   ace.logger.debug('test debug', {
-    data: { test: 'debug' }
+    metrics: { test: 'debug' }
   });
   ace.logger.flush();
   const evts = mockExport.mock.calls[0][0];

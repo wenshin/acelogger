@@ -21,6 +21,7 @@ export interface Logger {
   info: LogFunction;
   warn: LogFunction;
   error(err: Error | string, evt?: LoggerEvent): void;
+  fatal(err: Error | string, evt?: LoggerEvent): void;
 
   /**
    * global tags for all logger events.

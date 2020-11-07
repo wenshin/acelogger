@@ -38,7 +38,7 @@ export default class SimpleLogger implements Logger {
   private attributes: LoggerAttributes = {
     app: '',
     appVersion: '',
-    lib: 'acelogger@0.2.2',
+    lib: 'acelogger@0.3.0',
     name: '',
     version: ''
   };
@@ -75,30 +75,32 @@ export default class SimpleLogger implements Logger {
     this.innerLog(AlertLevel.Error, error, { ...evt });
   }
 
+  public fatal(error: Error, evt?: LoggerEvent): void {
+    this.innerLog(AlertLevel.Fatal, error, { ...evt });
+  }
+
   public store(evt: LoggerEvent): void {
     evt.type = EventType.Store;
     const msg = evt.message ? `, ${evt.message}` : '';
     this.innerLog(
       evt.level || AlertLevel.Debug,
-      `store ${JSON.stringify(evt.data)} metrics${msg}`,
-      {
-        ...evt
-      }
+      `store ${JSON.stringify(evt.metrics)}${msg}`,
+      { ...evt }
     );
   }
 
+  /**
+   * count event 1 time
+   * @param name
+   * @param evt
+   */
   public count(name: string, evt?: LoggerCountEvent): void {
     const e = { ...evt };
     e.name = name;
-    e.data = e.data || { count: 1 };
     e.type = EventType.Count;
 
     const msg = e.message ? `, ${e.message}` : '';
-    this.innerLog(
-      e.level || AlertLevel.Debug,
-      `count ${name} ${e.data.count} times${msg}`,
-      e
-    );
+    this.innerLog(e.level || AlertLevel.Debug, `count ${name}${msg}`, e);
   }
 
   /**
@@ -114,7 +116,7 @@ export default class SimpleLogger implements Logger {
   ): void {
     const e = { ...evt };
     e.name = name;
-    e.data = { duration };
+    e.metrics = { [name]: duration };
     e.type = EventType.Timing;
 
     const msg = e.message ? `, ${e.message}` : '';
@@ -165,25 +167,22 @@ export default class SimpleLogger implements Logger {
     }
 
     const e = {
+      ...evt,
       name: `${this.span.name}.end`,
-      type: EventType.End,
-      ...evt
+      type: EventType.End
     };
 
-    this.span.endTime = getMillisecondsTime(e.time) || this.manager.timer.now();
-
     e.level = e.level || AlertLevel.Info;
-    e.data = {
-      duration: this.span.endTime - this.span.startTime,
-      ...e.data
+
+    this.span.endTime = getMillisecondsTime(e.time) || this.manager.timer.now();
+    const duration = this.span.endTime - this.span.startTime;
+    e.metrics = {
+      [`${this.span.name}.duration`]: duration,
+      ...e.metrics
     };
 
     const msg = e.message ? `, ${e.message}` : '';
-    this.innerLog(
-      e.level,
-      `${this.span.name} end with ${e.data.duration}ms${msg}`,
-      e
-    );
+    this.innerLog(e.level, `${this.span.name} end with ${duration}ms${msg}`, e);
   }
 
   public setExporter(level: AlertLevel, exportor: LoggerEventExporter): this {
