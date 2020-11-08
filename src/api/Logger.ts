@@ -5,7 +5,8 @@ import {
   LoggerEvent,
   LoggerCountEvent,
   LoggerTimmingEvent,
-  LoggerAttributes
+  LoggerAttributes,
+  LoggerSetAttributes
 } from './LoggerEvent';
 import { SpanStruct } from './Span';
 import { Manager } from './Manager';
@@ -28,7 +29,7 @@ export interface Logger {
    * the tags like app name, app version
    * @param attrs
    */
-  setAttributes(attrs: LoggerAttributes): void;
+  setAttributes(attrs: LoggerSetAttributes): void;
 
   getAttributes(): LoggerAttributes;
 

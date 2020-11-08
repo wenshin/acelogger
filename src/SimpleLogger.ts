@@ -36,11 +36,7 @@ export default class SimpleLogger implements Logger {
   public manager: Manager;
   public span?: SpanStruct;
   private attributes: LoggerAttributes = {
-    app: '',
-    appVersion: '',
-    lib: 'acelogger@0.3.0',
-    name: '',
-    version: ''
+    lib: 'acelogger@0.4.0'
   };
   private bufferSize: number = 10;
   private bufferCount: number = 0;
@@ -49,10 +45,6 @@ export default class SimpleLogger implements Logger {
 
   public setAttributes(attrs: LoggerAttributes): void {
     Object.assign(this.attributes, attrs);
-    if (attrs.app && !this.attributes.name) {
-      this.attributes.name = attrs.app;
-      this.attributes.version = attrs.appVersion;
-    }
   }
 
   public getAttributes(): LoggerAttributes {
@@ -138,7 +130,6 @@ export default class SimpleLogger implements Logger {
       : options;
 
     const span = this.manager.tracer.createSpan(name, opts);
-    const tracer = this.manager.tracer.toJSON();
     const logger = new SimpleLogger();
     logger.span = span;
     logger.manager = this.manager;
@@ -150,8 +141,7 @@ export default class SimpleLogger implements Logger {
       spanId: span.context.spanId,
       spanKind: span.kind,
       spanName: span.name,
-      traceId: span.context.traceId,
-      tracerLib: tracer.lib
+      traceId: span.context.traceId
     });
     logger.info(`${span.name}.start`, {
       name: `${span.name}.start`,
@@ -176,8 +166,10 @@ export default class SimpleLogger implements Logger {
 
     this.span.endTime = getMillisecondsTime(e.time) || this.manager.timer.now();
     const duration = this.span.endTime - this.span.startTime;
+    const userDuration = this.span.endTime - this.span.userStartTime;
     e.metrics = {
       [`${this.span.name}.duration`]: duration,
+      [`${this.span.name}.user.duration`]: userDuration,
       ...e.metrics
     };
 

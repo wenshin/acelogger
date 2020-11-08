@@ -5,8 +5,6 @@ import { SpanStruct } from './Span';
 import { Manager } from './Manager';
 
 export interface TracerStruct {
-  // lib name and version. example, acelogger@0.0.2
-  lib: string;
   startTime: number; // Milliseconds
   endTime?: number; // Milliseconds
 }

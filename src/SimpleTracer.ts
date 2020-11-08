@@ -35,7 +35,6 @@ function createTraceId(): string {
 export default class SimpleTracer implements Tracer {
   public manager: Manager;
   private data: TracerStruct = {
-    lib: 'acelogger@0.3.0',
     startTime: Date.now()
   };
 
@@ -56,6 +55,8 @@ export default class SimpleTracer implements Tracer {
 
   public createSpan(name: string, options?: SpanOptions): SpanStruct {
     const opt = options || {};
+    const now = this.manager.timer.now();
+    const userStartTime = getMillisecondsTime(opt.startTime) || now;
     return {
       attributes: opt.attributes,
       context: this.createSpanContext(opt.parent),
@@ -63,7 +64,8 @@ export default class SimpleTracer implements Tracer {
       kind: opt.kind || SpanKind.INTERNAL,
       name,
       parentContext: opt.parent,
-      startTime: getMillisecondsTime(opt.startTime) || this.manager.timer.now()
+      startTime: now,
+      userStartTime
     };
   }
 

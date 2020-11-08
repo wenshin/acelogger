@@ -34,7 +34,7 @@ beforeAll(() => {
     }
   });
   ace.logger.setAttributes({
-    app: 'test-logger',
+    app: 'test-app',
     appVersion: '0.0.1'
   });
 });
@@ -50,7 +50,6 @@ beforeEach(() => {
 });
 
 test('SimpleLogger::startSpan without remote context', () => {
-  const tracer = ace.tracer.toJSON();
   const logger = ace.logger.startSpan('test.span1');
   const span = logger.span;
   expect(span).toBeTruthy();
@@ -67,16 +66,13 @@ test('SimpleLogger::startSpan without remote context', () => {
   const args = mockExport.mock.calls[0];
   expect(args[0].length).toBe(1);
   expect(args[0][0].attributes).toEqual({
-    app: 'test-logger',
+    app: 'test-app',
     appVersion: '0.0.1',
     lib: `${pkg.name}@${pkg.version}`,
-    name: 'test-logger',
     spanId: span.context.spanId,
     spanKind: SpanKind.INTERNAL,
     spanName: span.name,
-    traceId: span.context.traceId,
-    tracerLib: tracer.lib,
-    version: '0.0.1'
+    traceId: span.context.traceId
   });
   expect(args[0][0].name).toBe('test.span1.start');
   expect(args[0][0].message).toBe('test.span1.start');
@@ -99,7 +95,7 @@ test('SimpleLogger::startSpan with remote context', () => {
     startTime
   });
   const spanmetrics = logger.span;
-  expect(spanmetrics.startTime).toBe(startTime);
+  expect(spanmetrics.userStartTime).toBe(startTime);
   expect(spanmetrics.kind).toBe(SpanKind.SERVER);
 
   logger.flush();
@@ -124,7 +120,6 @@ test('SimpleLogger::startSpan start sub span', () => {
 });
 
 test('SimpleLogger::endSpan without event argument', () => {
-  const tracer = ace.tracer.toJSON();
   const logger = ace.logger.startSpan('test.span');
   logger.setAttributes({
     tag1: 'tag1',
@@ -143,26 +138,25 @@ test('SimpleLogger::endSpan without event argument', () => {
   expect(evts.length).toBe(2);
   // timing end span
   expect(evts[1].attributes).toEqual({
-    app: 'test-logger',
+    app: 'test-app',
     appVersion: '0.0.1',
     lib: `${pkg.name}@${pkg.version}`,
-    name: 'test-logger',
     spanId: span.context.spanId,
     spanKind: SpanKind.INTERNAL,
     spanName: span.name,
     tag1: 'tag1',
     tag2: 'tag2',
-    traceId: span.context.traceId,
-    tracerLib: tracer.lib,
-    version: '0.0.1'
+    traceId: span.context.traceId
   });
   expect(evts[1].name).toBe('test.span.end');
   expect(evts[1].message).toBe(
     `test.span end with ${logger.span.endTime - logger.span.startTime}ms`
   );
   expect(evts[1].level).toBe(AlertLevel.Info);
+  expect(span.startTime).toEqual(span.userStartTime);
   expect(evts[1].metrics).toEqual({
-    'test.span.duration': span.endTime - span.startTime
+    'test.span.duration': span.endTime - span.startTime,
+    'test.span.user.duration': span.endTime - span.userStartTime
   });
   expect(evts[1].status).toBe(CanonicalCode.OK);
   expect(evts[1].type).toBe(EventType.End);
@@ -191,7 +185,8 @@ test('SimpleLogger::endSpan with event argument', () => {
   expect(endEvent.traceFlags).toBe(TraceFlags.SAMPLED);
   expect(endEvent.status).toBe(CanonicalCode.NOT_FOUND);
   expect(endEvent.metrics).toEqual({
-    'test.span.duration': endTime - logger.span.startTime
+    'test.span.duration': endTime - logger.span.startTime,
+    'test.span.user.duration': endTime - logger.span.userStartTime
   });
 });
 
@@ -364,21 +359,17 @@ test('SimpleLogger::setAttributes update logger name and version', () => {
   ace.logger.flush();
   const evts = mockExport.mock.calls[0][0];
   expect(evts[0].attributes).toEqual({
-    app: 'test-logger',
+    app: 'test-app',
     appVersion: '0.0.1',
-    lib: `${pkg.name}@${pkg.version}`,
-    name: 'test-logger',
-    version: '0.0.1'
+    lib: `${pkg.name}@${pkg.version}`
   });
 });
 
 test('SimpleLogger::getAttributes', () => {
   const attrs = ace.logger.getAttributes();
   expect(attrs).toEqual({
-    app: 'test-logger',
+    app: 'test-app',
     appVersion: '0.0.1',
-    lib: `${pkg.name}@${pkg.version}`,
-    name: 'test-logger',
-    version: '0.0.1'
+    lib: `${pkg.name}@${pkg.version}`
   });
 });

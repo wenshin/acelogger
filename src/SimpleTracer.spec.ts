@@ -6,7 +6,6 @@ test('SimpleTracer::new', () => {
   const tracer = new SimpleTracer();
   const tracerData = tracer.toJSON();
   expect(ace.timer.now() - tracerData.startTime).toBeLessThan(5);
-  expect(tracerData.lib).toBe(`${pkg.name}@${pkg.version}`);
   expect(tracerData.startTime).toBeTruthy();
   expect(tracerData.endTime).toBeFalsy();
 

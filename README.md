@@ -120,7 +120,7 @@ const manager = new SimpleManager();
 manager.logger.setAttributes({
   app: globaleAce.logger.getAttributes().app,
   appVersion: globaleAce.logger.getAttributes().appVersion,
-  name: 'my-module'
+  lib: 'my-module@0.0.1'
 });
 
 // init logger exporter
@@ -162,6 +162,10 @@ manager.logger.setExporter(AlertLevel.Debug, {
 [See Details](./src/api)
 
 # ChangeLog
+
+#### 2020-09-23 0.4.0
+
+- remove some default attributes of LoggerEvent
 
 #### 2020-09-23 0.3.0
 
