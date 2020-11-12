@@ -163,6 +163,11 @@ manager.logger.setExporter(AlertLevel.Debug, {
 
 # ChangeLog
 
+#### 2020-09-23 0.5.0 Breaking Change
+
+- remove api count, timing, store
+- add storeMetrics, event api
+
 #### 2020-09-23 0.4.0
 
 - remove some default attributes of LoggerEvent
