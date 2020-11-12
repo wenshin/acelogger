@@ -1,20 +1,15 @@
-import { TimeInput } from './opentelemetry';
-import { AlertLevel } from './consts';
+import { LogLevel } from './consts';
 import { LoggerEventExporter } from './LoggerEventExporter';
-import {
-  LoggerEvent,
-  LoggerCountEvent,
-  LoggerTimmingEvent,
-  LoggerAttributes,
-  LoggerSetAttributes
-} from './LoggerEvent';
+import { LoggerEvent, LoggerAttributes } from './LoggerEvent';
 import { SpanStruct } from './Span';
 import { Manager } from './Manager';
 import { SpanOptions } from './Tracer';
 
 export type LogFunction = (message: string, evt?: LoggerEvent) => void;
 
-export type SpanLogger = Logger & { span: SpanStruct };
+export type SpanLogger = Logger & {
+  span: SpanStruct;
+};
 
 export interface Logger {
   manager: Manager;
@@ -29,7 +24,7 @@ export interface Logger {
    * the tags like app name, app version
    * @param attrs
    */
-  setAttributes(attrs: LoggerSetAttributes): void;
+  setAttributes(attrs: LoggerAttributes): void;
 
   getAttributes(): LoggerAttributes;
 
@@ -48,43 +43,32 @@ export interface Logger {
 
   /**
    * save some values for metrics, like cpu usage, memory usage.
-   * event level is `AlertLevel.Info`
-   * event type is `EventType.Store`
+   * event level is `LogLevel.Debug`
+   * event type is `EventType.Metric`
    * @param evt
    *
    * @example
    * ```typescript
-   * api.logger.store({
-   *   name: 'same name if exist'
-   *   data: {
+   * api.logger.storeMetrics({
+   *   metrics: {
    *     cpuUsage: 0.1,
    *     memoryUsage: 0.5,
    *   }
    * })
    * ```
    */
-  store(evt: LoggerEvent): void;
+  storeMetrics(evt: LoggerEvent): void;
 
   /**
-   * count event, like dau, mau, pv, uv etc
-   * event level is `EventLevel.Info`
-   * event type is `EventType.Count`
-   * @param evt
+   * record any events
    */
-  count(name: string, evt?: LoggerCountEvent): void;
-
-  /**
-   * event level is `EventLevel.Info`
-   * event type is `EventType.Timing`
-   * @param evt
-   */
-  timing(name: string, duration: TimeInput, evt?: LoggerTimmingEvent): void;
+  event(name: string, evt?: LoggerEvent): void;
 
   /**
    * @param level    great than the level will use the exporter.
    * @param exporter the exporter to send data to server.
    */
-  setExporter(level: AlertLevel, exporter: LoggerEventExporter): this;
+  setExporter(level: LogLevel, exporter: LoggerEventExporter): this;
 
   /**
    * set the buffer size, the implemetion should have a default size

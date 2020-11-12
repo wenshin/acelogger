@@ -1,18 +1,17 @@
 export enum EventType {
+  // normal event
+  Event = 'event',
   Log = 'log',
-  Store = 'store',
-  Count = 'count',
-  Timing = 'timing',
-  Start = 'start',
-  End = 'end'
+  Metric = 'metric',
+  Tracing = 'tracing'
 }
 
-export enum AlertLevel {
+export enum LogLevel {
   // some code debug informations
   Debug,
-  // user events
+  // the informations for users
   Info,
-  // app have may have error
+  // app may have error
   Warn,
   // app have error and not crashed
   Error,

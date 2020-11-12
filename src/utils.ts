@@ -3,7 +3,7 @@ import {
   LoggerEvent,
   EventType,
   CanonicalCode,
-  AlertLevel
+  LogLevel
 } from './api';
 
 export function isTimeInputHrTime(time: TimeInput): boolean {
@@ -16,26 +16,22 @@ export function getMillisecondsTime(time: TimeInput): number {
     : (time as number);
 }
 
-export function isMetricEvent(evt: LoggerEvent): boolean {
+export function isCountEvent(evt: LoggerEvent): boolean {
   return (
-    evt &&
-    (evt.type === EventType.Start ||
-      evt.type === EventType.End ||
-      evt.type === EventType.Count ||
-      evt.type === EventType.Store ||
-      evt.type === EventType.Timing)
+    evt && (evt.type === EventType.Tracing || evt.type === EventType.Event)
   );
 }
 
-export function getAlertLevelByStatus(status: CanonicalCode): AlertLevel {
+export function getLogLevelByStatus(status: CanonicalCode): LogLevel {
   switch (status) {
     case CanonicalCode.OK:
-      return AlertLevel.Debug;
+      // success status use debug level
+      return LogLevel.Debug;
     case CanonicalCode.INTERNAL:
     case CanonicalCode.RESOURCE_EXHAUSTED:
     case CanonicalCode.UNAVAILABLE:
-      return AlertLevel.Error;
+      return LogLevel.Error;
     default:
-      return AlertLevel.Warn;
+      return LogLevel.Warn;
   }
 }

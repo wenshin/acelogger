@@ -1,4 +1,4 @@
-import ace, { AlertLevel, ConsoleExporterWeb } from '../src';
+import ace, { LogLevel, ConsoleExporterWeb } from '../src';
 
 ace.setTimer({
   now(): number {
@@ -13,5 +13,5 @@ ace.logger.setAttributes({
 });
 
 // init logger exporter
-ace.logger.setExporter(AlertLevel.Debug, new ConsoleExporterWeb());
+ace.logger.setExporter(LogLevel.Debug, new ConsoleExporterWeb());
 ace.logger.setBufferSize(0);

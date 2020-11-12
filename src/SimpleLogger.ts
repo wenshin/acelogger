@@ -2,10 +2,8 @@ import {
   Logger,
   LoggerEvent,
   LoggerEventExporter,
-  AlertLevel,
+  LogLevel,
   EventType,
-  LoggerTimmingEvent,
-  LoggerCountEvent,
   ExportResult,
   SpanLogger,
   CanonicalCode,
@@ -14,7 +12,7 @@ import {
   Manager,
   SpanOptions
 } from './api';
-import { getAlertLevelByStatus, getMillisecondsTime } from './utils';
+import { getLogLevelByStatus, getMillisecondsTime } from './utils';
 
 /**
  * 1. Start event
@@ -36,12 +34,13 @@ export default class SimpleLogger implements Logger {
   public manager: Manager;
   public span?: SpanStruct;
   private attributes: LoggerAttributes = {
-    lib: 'acelogger@0.4.0'
+    lib: 'acelogger@0.4.0',
+    logger: 'acelogger'
   };
   private bufferSize: number = 10;
   private bufferCount: number = 0;
-  private eventBuffer: Map<AlertLevel, LoggerEvent[]> = new Map();
-  private exporterMap: Map<AlertLevel, LoggerEventExporter[]> = new Map();
+  private eventBuffer: Map<LogLevel, LoggerEvent[]> = new Map();
+  private exporterMap: Map<LogLevel, LoggerEventExporter[]> = new Map();
 
   public setAttributes(attrs: LoggerAttributes): void {
     Object.assign(this.attributes, attrs);
@@ -52,71 +51,75 @@ export default class SimpleLogger implements Logger {
   }
 
   public debug(message: string, evt?: LoggerEvent): void {
-    this.innerLog(AlertLevel.Debug, message, { ...evt });
+    this.innerLog({
+      ...evt,
+      level: LogLevel.Debug,
+      message,
+      name: 'log.debug'
+    });
   }
 
   public info(message: string, evt?: LoggerEvent): void {
-    this.innerLog(AlertLevel.Info, message, { ...evt });
+    this.innerLog({
+      ...evt,
+      level: LogLevel.Info,
+      message,
+      name: 'log.info'
+    });
   }
 
   public warn(message: string, evt?: LoggerEvent): void {
-    this.innerLog(AlertLevel.Warn, message, { ...evt });
+    this.innerLog({
+      ...evt,
+      level: LogLevel.Warn,
+      message,
+      name: 'log.warn'
+    });
   }
 
   public error(error: Error, evt?: LoggerEvent): void {
-    this.innerLog(AlertLevel.Error, error, { ...evt });
+    this.innerLog({
+      ...evt,
+      level: LogLevel.Error,
+      message: error.message,
+      name: 'log.error',
+      stack: error.stack
+    });
   }
 
   public fatal(error: Error, evt?: LoggerEvent): void {
-    this.innerLog(AlertLevel.Fatal, error, { ...evt });
+    this.innerLog({
+      ...evt,
+      level: LogLevel.Fatal,
+      message: error.message,
+      name: 'log.fatal',
+      stack: error.stack
+    });
   }
 
-  public store(evt: LoggerEvent): void {
-    evt.type = EventType.Store;
+  public storeMetrics(evt: LoggerEvent): void {
     const msg = evt.message ? `, ${evt.message}` : '';
-    this.innerLog(
-      evt.level || AlertLevel.Debug,
-      `store ${JSON.stringify(evt.metrics)}${msg}`,
-      { ...evt }
-    );
+    this.innerLog({
+      ...evt,
+      level: evt.level || LogLevel.Debug,
+      message: `store ${JSON.stringify(evt.metrics)}${msg}`,
+      name: 'metric.store',
+      type: EventType.Metric
+    });
   }
 
   /**
-   * count event 1 time
+   * normal events
    * @param name
    * @param evt
    */
-  public count(name: string, evt?: LoggerCountEvent): void {
+  public event(name: string, evt?: LoggerEvent): void {
     const e = { ...evt };
     e.name = name;
-    e.type = EventType.Count;
-
-    const msg = e.message ? `, ${e.message}` : '';
-    this.innerLog(e.level || AlertLevel.Debug, `count ${name}${msg}`, e);
-  }
-
-  /**
-   *
-   * @param name the name of timing event
-   * @param duration ms
-   * @param evt other event info
-   */
-  public timing(
-    name: string,
-    duration: number,
-    evt?: LoggerTimmingEvent
-  ): void {
-    const e = { ...evt };
-    e.name = name;
-    e.metrics = { [name]: duration };
-    e.type = EventType.Timing;
-
-    const msg = e.message ? `, ${e.message}` : '';
-    this.innerLog(
-      e.level || AlertLevel.Debug,
-      `timing ${name} ${duration}ms${msg}`,
-      e
-    );
+    e.type = EventType.Event;
+    e.level = LogLevel.Info;
+    e.message = e.message || `log event: ${name}`;
+    this.innerLog(e);
   }
 
   // startSpan, throw start event
@@ -143,9 +146,14 @@ export default class SimpleLogger implements Logger {
       spanName: span.name,
       traceId: span.context.traceId
     });
-    logger.info(`${span.name}.start`, {
+    logger.innerLog({
+      level: LogLevel.Info,
+      message: `${span.name}.start`,
+      metrics: {
+        [`${span.name}.start.latency`]: span.startTime - span.userStartTime
+      },
       name: `${span.name}.start`,
-      type: EventType.Start
+      type: EventType.Tracing
     });
     return logger as SpanLogger;
   }
@@ -159,28 +167,27 @@ export default class SimpleLogger implements Logger {
     const e = {
       ...evt,
       name: `${this.span.name}.end`,
-      type: EventType.End
+      type: EventType.Tracing
     };
 
-    e.level = e.level || AlertLevel.Info;
+    e.level = e.level || LogLevel.Info;
 
     this.span.endTime = getMillisecondsTime(e.time) || this.manager.timer.now();
     const duration = this.span.endTime - this.span.startTime;
-    const userDuration = this.span.endTime - this.span.userStartTime;
     e.metrics = {
       [`${this.span.name}.duration`]: duration,
-      [`${this.span.name}.user.duration`]: userDuration,
       ...e.metrics
     };
 
     const msg = e.message ? `, ${e.message}` : '';
-    this.innerLog(e.level, `${this.span.name} end with ${duration}ms${msg}`, e);
+    e.message = `${this.span.name} end with ${duration}ms${msg}`;
+    this.innerLog(e);
   }
 
-  public setExporter(level: AlertLevel, exportor: LoggerEventExporter): this {
-    Object.keys(AlertLevel).forEach(l => {
-      const levelValue = AlertLevel[l];
-      // set AlertLevel.Info exporter, will alse set all levels which greater than AlertLevel.Info;
+  public setExporter(level: LogLevel, exportor: LoggerEventExporter): this {
+    Object.keys(LogLevel).forEach(l => {
+      const levelValue = LogLevel[l];
+      // set LogLevel.Info exporter, will alse set all levels which greater than LogLevel.Info;
       if (typeof levelValue === 'number' && levelValue >= level) {
         const arr = this.exporterMap.get(levelValue) || [];
         arr.push(exportor);
@@ -206,11 +213,7 @@ export default class SimpleLogger implements Logger {
     return;
   }
 
-  private innerLog(
-    level: AlertLevel,
-    message: string | Error,
-    evt: LoggerEvent
-  ): void {
+  private innerLog(evt: LoggerEvent): void {
     if (this.span) {
       evt.traceFlags =
         evt.traceFlags === undefined || evt.traceFlags === null
@@ -223,18 +226,11 @@ export default class SimpleLogger implements Logger {
       ...evt.attributes
     };
 
-    if (typeof message === 'string' && message) {
-      evt.message = message;
-    } else if (message instanceof Error) {
-      evt.stack = message.stack;
-      evt.message = message.message;
-    }
-
     if (!evt.status) {
       evt.status = CanonicalCode.OK;
     }
 
-    evt.level = Math.max(getAlertLevelByStatus(evt.status), level);
+    evt.level = Math.max(getLogLevelByStatus(evt.status), evt.level);
 
     if (!evt.time) {
       evt.time = this.manager.timer.now();
@@ -260,7 +256,7 @@ export default class SimpleLogger implements Logger {
     }
   }
 
-  private export(level: AlertLevel, evts: LoggerEvent[]): void {
+  private export(level: LogLevel, evts: LoggerEvent[]): void {
     try {
       const exporters = this.exporterMap.get(level);
       if (exporters) {

@@ -1,4 +1,4 @@
-import ace, { AlertLevel, ConsoleExporterWeb, SimpleManager } from '../src';
+import ace, { LogLevel, ConsoleExporterWeb, SimpleManager } from '../src';
 const manager = new SimpleManager();
 
 manager.logger.setAttributes({
@@ -8,7 +8,7 @@ manager.logger.setAttributes({
 });
 
 // init logger exporter
-manager.logger.setExporter(AlertLevel.Debug, new ConsoleExporterWeb());
+manager.logger.setExporter(LogLevel.Debug, new ConsoleExporterWeb());
 manager.logger.setBufferSize(0);
 
 export { manager as myModuleAce };

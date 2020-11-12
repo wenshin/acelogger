@@ -17,18 +17,33 @@ type SpanContextConfig = {
   traceFlags?: TraceFlags;
 } & SpanContext;
 
-function createSpanId(parentSpanId?: string): string {
-  return parentSpanId ? `${parentSpanId}.1` : '1';
+const spanCountMap = {
+  $rootSpan: 0
+};
+
+function createSpanId(traceId: string, parentSpanId?: string): string {
+  let count: number;
+  // no parent span
+  if (!parentSpanId) {
+    count = spanCountMap.$rootSpan = spanCountMap.$rootSpan + 1;
+  } else {
+    if (!spanCountMap[parentSpanId]) {
+      count = spanCountMap[parentSpanId] = 1;
+    } else {
+      count = spanCountMap[parentSpanId] = spanCountMap[parentSpanId] + 1;
+    }
+  }
+  return parentSpanId ? `${parentSpanId}.${count}` : `${traceId}-${count}`;
 }
 
-function createTraceId(): string {
+export function createTraceId(): string {
   return (
     Math.random()
       .toString(32)
-      .substring(2) +
+      .substring(2, 8) +
     Math.random()
       .toString(32)
-      .substring(2)
+      .substring(2, 8)
   );
 }
 
@@ -44,11 +59,12 @@ export default class SimpleTracer implements Tracer {
 
   public createSpanContext(ctx?: SpanContextConfig): SpanContext {
     const c = { ...ctx };
+    const traceId = c.traceId || createTraceId();
     return {
       isRemote: c.isRemote,
-      spanId: createSpanId(c.spanId),
+      spanId: createSpanId(traceId, c.spanId),
       traceFlags: c.traceFlags || TraceFlags.NONE,
-      traceId: c.traceId || createTraceId(),
+      traceId,
       traceState: c.traceState
     };
   }

@@ -1,6 +1,6 @@
 import ace from '.';
 import {
-  AlertLevel,
+  LogLevel,
   LoggerEvent,
   LoggerEventExporter,
   EventType,
@@ -25,7 +25,7 @@ class Exporter implements LoggerEventExporter {
   }
 }
 
-ace.logger.setExporter(AlertLevel.Debug, new Exporter());
+ace.logger.setExporter(LogLevel.Debug, new Exporter());
 
 beforeAll(() => {
   ace.setTimer({
@@ -54,7 +54,7 @@ test('SimpleLogger::startSpan without remote context', () => {
   const span = logger.span;
   expect(span).toBeTruthy();
   expect(span.startTime).toBeTruthy();
-  expect(span.context.spanId).toBe('1');
+  expect(span.context.spanId).toBe(`${span.context.traceId}-1`);
   expect(span.context.traceId).toBeTruthy();
   expect(span.context.traceFlags).toBe(TraceFlags.NONE);
 
@@ -68,6 +68,7 @@ test('SimpleLogger::startSpan without remote context', () => {
   expect(args[0][0].attributes).toEqual({
     app: 'test-app',
     appVersion: '0.0.1',
+    logger: 'acelogger',
     lib: `${pkg.name}@${pkg.version}`,
     spanId: span.context.spanId,
     spanKind: SpanKind.INTERNAL,
@@ -76,11 +77,19 @@ test('SimpleLogger::startSpan without remote context', () => {
   });
   expect(args[0][0].name).toBe('test.span1.start');
   expect(args[0][0].message).toBe('test.span1.start');
-  expect(args[0][0].level).toBe(AlertLevel.Info);
-  expect(args[0][0].metrics).toBe(undefined);
+  expect(args[0][0].level).toBe(LogLevel.Info);
+  expect(args[0][0].metrics).toEqual({ 'test.span1.start.latency': 0 });
   expect(args[0][0].traceFlags).toBe(TraceFlags.NONE);
   expect(args[0][0].status).toBe(CanonicalCode.OK);
-  expect(args[0][0].type).toBe(EventType.Start);
+  expect(args[0][0].type).toBe(EventType.Tracing);
+
+  const logger2 = ace.logger.startSpan('test.span2');
+  expect(logger2.getAttributes().spanId).toBe(
+    `${logger2.span.context.traceId}-2`
+  );
+  expect(
+    logger2.getAttributes().traceId !== logger.getAttributes().traceId
+  ).toBeTruthy();
 });
 
 test('SimpleLogger::startSpan with remote context', () => {
@@ -95,27 +104,37 @@ test('SimpleLogger::startSpan with remote context', () => {
     startTime
   });
   const spanmetrics = logger.span;
+  expect(spanmetrics.context.spanId).toBe('1.1.1');
   expect(spanmetrics.userStartTime).toBe(startTime);
   expect(spanmetrics.kind).toBe(SpanKind.SERVER);
 
   logger.flush();
   const args = mockExport.mock.calls[0];
   expect(args[0][0].traceFlags).toBe(TraceFlags.SAMPLED);
+  expect(args[0][0].metrics).toEqual({
+    'test.span.start.latency': spanmetrics.startTime - spanmetrics.userStartTime
+  });
 });
 
 test('SimpleLogger::startSpan start sub span', () => {
   const logger1 = ace.logger.startSpan('test.span1');
   const logger2 = logger1.startSpan('test.span2');
-  expect((logger1 as any).attributes).toEqual({
-    ...(logger2 as any).attributes,
-    spanId: '1',
+  const logger3 = logger1.startSpan('test.span3');
+  expect(logger1.getAttributes()).toEqual({
+    ...logger2.getAttributes(),
+    spanId: logger1.span.context.spanId,
     spanName: 'test.span1'
   });
-  expect((logger2 as any).attributes.spanId).toBe('1.1');
-  expect((logger2 as any).attributes.spanName).toBe('test.span2');
+  expect(logger2.getAttributes().spanId).toBe(
+    `${logger1.span.context.spanId}.1`
+  );
+  expect(logger2.getAttributes().spanName).toBe('test.span2');
+  expect(logger3.getAttributes().spanId).toBe(
+    `${logger1.span.context.spanId}.2`
+  );
 
   const span2 = logger2.span;
-  expect(span2.context.spanId).toBe('1.1');
+  expect(span2.context.spanId).toBe(`${logger1.getAttributes().spanId}.1`);
   expect(span2.context.traceId).toBe(logger1.span.context.traceId);
 });
 
@@ -140,6 +159,7 @@ test('SimpleLogger::endSpan without event argument', () => {
   expect(evts[1].attributes).toEqual({
     app: 'test-app',
     appVersion: '0.0.1',
+    logger: 'acelogger',
     lib: `${pkg.name}@${pkg.version}`,
     spanId: span.context.spanId,
     spanKind: SpanKind.INTERNAL,
@@ -152,21 +172,20 @@ test('SimpleLogger::endSpan without event argument', () => {
   expect(evts[1].message).toBe(
     `test.span end with ${logger.span.endTime - logger.span.startTime}ms`
   );
-  expect(evts[1].level).toBe(AlertLevel.Info);
+  expect(evts[1].level).toBe(LogLevel.Info);
   expect(span.startTime).toEqual(span.userStartTime);
   expect(evts[1].metrics).toEqual({
-    'test.span.duration': span.endTime - span.startTime,
-    'test.span.user.duration': span.endTime - span.userStartTime
+    'test.span.duration': span.endTime - span.startTime
   });
   expect(evts[1].status).toBe(CanonicalCode.OK);
-  expect(evts[1].type).toBe(EventType.End);
+  expect(evts[1].type).toBe(EventType.Tracing);
 });
 
 test('SimpleLogger::endSpan with event argument', () => {
   const endTime = Date.now() + 1000;
   const logger = ace.logger.startSpan('test.span');
   logger.endSpan({
-    level: AlertLevel.Error,
+    level: LogLevel.Error,
     message: 'endSpan message',
     status: CanonicalCode.NOT_FOUND,
     time: endTime,
@@ -181,12 +200,11 @@ test('SimpleLogger::endSpan with event argument', () => {
     `test.span end with ${logger.span.endTime -
       logger.span.startTime}ms, endSpan message`
   );
-  expect(endEvent.level).toBe(AlertLevel.Error);
+  expect(endEvent.level).toBe(LogLevel.Error);
   expect(endEvent.traceFlags).toBe(TraceFlags.SAMPLED);
   expect(endEvent.status).toBe(CanonicalCode.NOT_FOUND);
   expect(endEvent.metrics).toEqual({
-    'test.span.duration': endTime - logger.span.startTime,
-    'test.span.user.duration': endTime - logger.span.userStartTime
+    'test.span.duration': endTime - logger.span.startTime
   });
 });
 
@@ -194,7 +212,7 @@ test('SimpleLogger::endSpan with error status', () => {
   // @ts-ignore
   const logger = ace.logger.startSpan('test.span');
   logger.endSpan({
-    level: AlertLevel.Warn,
+    level: LogLevel.Warn,
     status: CanonicalCode.INTERNAL
   });
   logger.flush();
@@ -203,7 +221,7 @@ test('SimpleLogger::endSpan with error status', () => {
   const infoevts = mockExport.mock.calls[1][0];
   expect(infoevts.length).toBe(1);
   expect(infoevts[0].status).toBe(CanonicalCode.INTERNAL);
-  expect(infoevts[0].level).toBe(AlertLevel.Error);
+  expect(infoevts[0].level).toBe(LogLevel.Error);
 });
 
 test('SimpleLogger::endSpan whitout span', () => {
@@ -213,7 +231,7 @@ test('SimpleLogger::endSpan whitout span', () => {
   expect(evts[0].message).toBe(
     'logger.endSpan must call after logger.startSpan'
   );
-  expect(evts[0].level).toBe(AlertLevel.Error);
+  expect(evts[0].level).toBe(LogLevel.Error);
 });
 
 test('SimpleLogger log message whitout span', () => {
@@ -239,7 +257,7 @@ test('SimpleLogger log message whitout span', () => {
   const levels = ['debug', 'info', 'warn', 'error', 'fatal'];
   for (let i = 0; i < 4; i++) {
     const evts = mockExport.mock.calls[i][0];
-    expect(evts[0].name).toBeFalsy();
+    expect(evts[0].name).toBe(`log.${levels[i]}`);
     expect(evts[0].message).toBe('test ' + levels[i]);
     expect(evts[0].level).toBe(i);
     expect(evts[0].traceFlags).toBe(undefined);
@@ -274,82 +292,54 @@ test('SimpleLogger buffer is full', () => {
   expect(mockExport.mock.calls.length).toBe(1);
 });
 
-test('SimpleLogger::store', () => {
-  ace.logger.store({
+test('SimpleLogger::storeMetrics', () => {
+  ace.logger.storeMetrics({
     message: 'test-store-message',
     metrics: {
       cpuUsage: 0.1
-    },
-    name: 'performance'
+    }
   });
   ace.logger.flush();
   const evts = mockExport.mock.calls[0][0];
-  expect(evts[0].name).toBe('performance');
+  expect(evts[0].name).toBe('metric.store');
   expect(evts[0].message).toBe('store {"cpuUsage":0.1}, test-store-message');
-  expect(evts[0].level).toBe(AlertLevel.Debug);
+  expect(evts[0].level).toBe(LogLevel.Debug);
   expect(evts[0].metrics).toEqual({
     cpuUsage: 0.1
   });
 });
 
-test('SimpleLogger::store without message', () => {
-  ace.logger.store({
+test('SimpleLogger::storeMetrics without message', () => {
+  ace.logger.storeMetrics({
     metrics: {
       cpuUsage: 0.1
-    },
-    name: 'performance'
+    }
   });
   ace.logger.flush();
   const evts = mockExport.mock.calls[0][0];
   expect(evts[0].message).toBe('store {"cpuUsage":0.1}');
 });
 
-test('SimpleLogger::count no event params', () => {
-  ace.logger.count('test-count');
+test('SimpleLogger::event without message', () => {
+  ace.logger.event('test-event', {
+    attributes: {
+      'my-attr': 'attr'
+    }
+  });
   ace.logger.flush();
   const evts = mockExport.mock.calls[0][0];
-  expect(evts[0].message).toBe('count test-count');
-  expect(evts[0].level).toBe(AlertLevel.Debug);
-  expect(evts[0].metrics).toEqual(undefined);
+  expect(evts[0].level).toBe(LogLevel.Info);
+  expect(evts[0].attributes['my-attr']).toBe('attr');
+  expect(evts[0].message).toBe(`log event: test-event`);
 });
 
-test('SimpleLogger::count with event params', () => {
-  ace.logger.count('test-count', {
-    level: AlertLevel.Warn,
-    message: 'test-count-message'
+test('SimpleLogger::event with message', () => {
+  ace.logger.event('test-event', {
+    message: 'my test-event'
   });
   ace.logger.flush();
   const evts = mockExport.mock.calls[0][0];
-  expect(evts[0].message).toBe('count test-count, test-count-message');
-  expect(evts[0].level).toBe(AlertLevel.Warn);
-  expect(evts[0].metrics).toEqual(undefined);
-});
-
-test('SimpleLogger::timing no event params', () => {
-  ace.logger.timing('test-timing', 1000);
-  ace.logger.flush();
-  const evts = mockExport.mock.calls[0][0];
-  expect(evts[0].message).toBe('timing test-timing 1000ms');
-  expect(evts[0].level).toBe(AlertLevel.Debug);
-  expect(evts[0].metrics).toEqual({
-    'test-timing': 1000
-  });
-});
-
-test('SimpleLogger::timing with event params', () => {
-  ace.logger.timing('test-timing', 1000, {
-    level: AlertLevel.Error,
-    message: 'test-timing-message'
-  });
-  ace.logger.flush();
-  const evts = mockExport.mock.calls[0][0];
-  expect(evts[0].message).toBe(
-    'timing test-timing 1000ms, test-timing-message'
-  );
-  expect(evts[0].level).toBe(AlertLevel.Error);
-  expect(evts[0].metrics).toEqual({
-    'test-timing': 1000
-  });
+  expect(evts[0].message).toBe(`my test-event`);
 });
 
 test('SimpleLogger::setAttributes update logger name and version', () => {
@@ -361,6 +351,7 @@ test('SimpleLogger::setAttributes update logger name and version', () => {
   expect(evts[0].attributes).toEqual({
     app: 'test-app',
     appVersion: '0.0.1',
+    logger: 'acelogger',
     lib: `${pkg.name}@${pkg.version}`
   });
 });
@@ -370,6 +361,7 @@ test('SimpleLogger::getAttributes', () => {
   expect(attrs).toEqual({
     app: 'test-app',
     appVersion: '0.0.1',
+    logger: 'acelogger',
     lib: `${pkg.name}@${pkg.version}`
   });
 });
