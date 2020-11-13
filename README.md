@@ -49,7 +49,7 @@ $ npm install --save acelogger
 ```typescript
 import ace, {
   ConsoleExporterWeb,
-  AlertLevel,
+  LogLevel,
   CanonicalCode,
   isMetricEvent
 } from 'acelogger';
@@ -67,26 +67,21 @@ class MetricExporterWeb implements LoggerEventExporter {
 }
 
 // set event exporter, for mesage logging
-ace.logger.setExporter(AlertLevel.Debug, new ConsoleExporterWeb());
+ace.logger.setExporter(LogLevel.Debug, new ConsoleExporterWeb());
 // set event exporter, for metric reportings
-ace.logger.setExporter(AlertLevel.Debug, new MetricExporterWeb());
+ace.logger.setExporter(LogLevel.Debug, new MetricExporterWeb());
 // export events immediately
 ace.logger.setBufferSize(0);
 
 // log info level message
 ace.logger.info('test info');
-ace.logger.store({
-  data: {
+ace.logger.storeMetrics({
+  metrics: {
     memoryUsage: 0.1,
     cpuUsage: 0.5
   }
 });
-ace.logger.count('button_click');
-ace.logger.timming('fetch', 500, {
-  attributes: {
-    url: 'https://demo.com'
-  }
-});
+ace.logger.event('button_click');
 
 // creat a span logger
 const spanLogger = ace.logger.startSpan('first.span', {
@@ -98,7 +93,7 @@ spanLogger.setAttributes({
 });
 
 spanLogger.info('test info');
-spanLogger.count('http_request');
+spanLogger.event('button_click');
 
 spanLogger.endSpan({
   status: CanonicalCode.OK
@@ -112,7 +107,7 @@ when logging in module, you can customize a scoped logger.
 ```typescript
 import globaleAce, {
   SimpleManager,
-  AlertLevel,
+  LogLevel,
   ConsoleExporterWeb
 } from 'acelogger';
 const manager = new SimpleManager();
@@ -124,7 +119,7 @@ manager.logger.setAttributes({
 });
 
 // init logger exporter
-manager.logger.setExporter(AlertLevel.Debug, new ConsoleExporterWeb());
+manager.logger.setExporter(LogLevel.Debug, new ConsoleExporterWeb());
 manager.logger.setBufferSize(0);
 
 export { manager as ace };
@@ -135,10 +130,10 @@ export { manager as ace };
 you can customize a exporter
 
 ```typescript
-import ace, { TraceFlags, SimpleManager, AlertLevel, ConsoleExporterWeb, isMetricEvent } from 'acelogger';
+import ace, { TraceFlags, SimpleManager, LogLevel, ConsoleExporterWeb, isCountEvent } from 'acelogger';
 
 // init logger exporter
-manager.logger.setExporter(AlertLevel.Debug, {
+manager.logger.setExporter(LogLevel.Debug, {
   export(
     events: LoggerEvent[],
     resultCallback: (result: ExportResult) => void
@@ -147,11 +142,12 @@ manager.logger.setExporter(AlertLevel.Debug, {
       if (evt.traceFlags === TraceFlags.SAMPLED && !isSimpled(evt)) {
         return;
       }
-      if (isMetricEvent(evt)) {
+      if (evt.metrics) {
         logMetric(evt);
-      } else {
-        log(evt)
+      } else if (isCountEvent(evt)) {
+        logCount(evt)
       }
+      logToFile(evt);
     }
   };
 });
@@ -163,35 +159,39 @@ manager.logger.setExporter(AlertLevel.Debug, {
 
 # ChangeLog
 
-#### 2020-09-23 0.5.0 Breaking Change
+#### 2020-11-13 0.5.1
+
+- update README.md
+
+#### 2020-11-12 0.5.0 Breaking Change
 
 - remove api count, timing, store
 - add storeMetrics, event api
 
-#### 2020-09-23 0.4.0
+#### 2020-11-08 0.4.0
 
 - remove some default attributes of LoggerEvent
 
-#### 2020-09-23 0.3.0
+#### 2020-11-07 0.3.0
 
 - add fatal for Logger
 - Logger.count only record 1 time
 - LoggerEvent add metrics property and data property will without metrics
 
-#### 2020-09-23 0.2.2
+#### 2020-10-11 0.2.2
 
 - add traceFlags for LoggerEvent, which can get sampled flag
 - change endSpan message format, now have duration and customized message
 
-#### 2020-09-23 0.2.1
+#### 2020-09-25 0.2.1
 
 - refactor isMetricEvent
 
-#### 2020-09-23 0.2.0
+#### 2020-09-24 0.2.0
 
 - break change SimpleLogger api, to reduce duplicate logs
 
-#### 2020-09-23 0.1.1
+#### 2020-09-24 0.1.1
 
 - remove unsafe dependencies
 
