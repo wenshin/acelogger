@@ -159,6 +159,10 @@ manager.logger.setExporter(LogLevel.Debug, {
 
 # ChangeLog
 
+#### 2020-11-17 0.5.2
+
+- feat: move spanId and traceId to LoggerEvent.data
+
 #### 2020-11-13 0.5.1
 
 - update README.md
