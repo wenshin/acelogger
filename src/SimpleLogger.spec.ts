@@ -70,9 +70,11 @@ test('SimpleLogger::startSpan without remote context', () => {
     appVersion: '0.0.1',
     logger: 'acelogger',
     lib: `${pkg.name}@${pkg.version}`,
-    spanId: span.context.spanId,
     spanKind: SpanKind.INTERNAL,
-    spanName: span.name,
+    spanName: span.name
+  });
+  expect(args[0][0].data).toEqual({
+    spanId: span.context.spanId,
     traceId: span.context.traceId
   });
   expect(args[0][0].name).toBe('test.span1.start');
@@ -84,11 +86,9 @@ test('SimpleLogger::startSpan without remote context', () => {
   expect(args[0][0].type).toBe(EventType.Tracing);
 
   const logger2 = ace.logger.startSpan('test.span2');
-  expect(logger2.getAttributes().spanId).toBe(
-    `${logger2.span.context.traceId}-2`
-  );
+  expect(logger2.span.context.spanId).toBe(`${logger2.span.context.traceId}-2`);
   expect(
-    logger2.getAttributes().traceId !== logger.getAttributes().traceId
+    logger2.span.context.traceId !== logger.span.context.traceId
   ).toBeTruthy();
 });
 
@@ -122,19 +122,14 @@ test('SimpleLogger::startSpan start sub span', () => {
   const logger3 = logger1.startSpan('test.span3');
   expect(logger1.getAttributes()).toEqual({
     ...logger2.getAttributes(),
-    spanId: logger1.span.context.spanId,
     spanName: 'test.span1'
   });
-  expect(logger2.getAttributes().spanId).toBe(
-    `${logger1.span.context.spanId}.1`
-  );
+  expect(logger2.span.context.spanId).toBe(`${logger1.span.context.spanId}.1`);
   expect(logger2.getAttributes().spanName).toBe('test.span2');
-  expect(logger3.getAttributes().spanId).toBe(
-    `${logger1.span.context.spanId}.2`
-  );
+  expect(logger3.span.context.spanId).toBe(`${logger1.span.context.spanId}.2`);
 
   const span2 = logger2.span;
-  expect(span2.context.spanId).toBe(`${logger1.getAttributes().spanId}.1`);
+  expect(span2.context.spanId).toBe(`${logger1.span.context.spanId}.1`);
   expect(span2.context.traceId).toBe(logger1.span.context.traceId);
 });
 
@@ -161,11 +156,13 @@ test('SimpleLogger::endSpan without event argument', () => {
     appVersion: '0.0.1',
     logger: 'acelogger',
     lib: `${pkg.name}@${pkg.version}`,
-    spanId: span.context.spanId,
     spanKind: SpanKind.INTERNAL,
     spanName: span.name,
     tag1: 'tag1',
-    tag2: 'tag2',
+    tag2: 'tag2'
+  });
+  expect(evts[1].data).toEqual({
+    spanId: span.context.spanId,
     traceId: span.context.traceId
   });
   expect(evts[1].name).toBe('test.span.end');

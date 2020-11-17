@@ -141,10 +141,8 @@ export default class SimpleLogger implements Logger {
     logger.setAttributes({
       ...this.attributes,
       ...span.attributes,
-      spanId: span.context.spanId,
       spanKind: span.kind,
-      spanName: span.name,
-      traceId: span.context.traceId
+      spanName: span.name
     });
     logger.innerLog({
       level: LogLevel.Info,
@@ -234,6 +232,14 @@ export default class SimpleLogger implements Logger {
 
     if (!evt.time) {
       evt.time = this.manager.timer.now();
+    }
+
+    if (this.span) {
+      evt.data = {
+        spanId: this.span.context.spanId,
+        traceId: this.span.context.traceId,
+        ...evt.data
+      };
     }
 
     try {

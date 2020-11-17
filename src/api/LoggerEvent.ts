@@ -13,10 +13,8 @@ export interface LoggerAttributes extends Attributes {
   // logger lib name and version, like acelogger@0.0.2
   lib?: string;
   // tracer attributes
-  spanId?: string;
   spanName?: string;
   spanKind?: SpanKind;
-  traceId?: string;
 }
 
 export interface LoggerEvent {
@@ -33,6 +31,8 @@ export interface LoggerEvent {
   };
   //  any object data
   data?: {
+    spanId?: string;
+    traceId?: string;
     [key: string]: any;
   };
   // error status code
