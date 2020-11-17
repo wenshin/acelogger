@@ -25,7 +25,7 @@ class Exporter implements LoggerEventExporter {
   }
 }
 
-ace.logger.setExporter(LogLevel.Debug, new Exporter());
+ace.setExporter(LogLevel.Debug, new Exporter());
 
 beforeAll(() => {
   ace.setTimer({
@@ -45,7 +45,7 @@ afterAll(() => {
 
 beforeEach(() => {
   ace.logger.flush();
-  ace.logger.setBufferSize(10);
+  ace.setBufferSize(10);
   mockExport.mockReset();
 });
 
@@ -277,13 +277,13 @@ test('SimpleLogger log with traceFlag', () => {
 });
 
 test('SimpleLogger::setBufferSize set buffer size to 0', () => {
-  ace.logger.setBufferSize(0);
+  ace.setBufferSize(0);
   ace.logger.info('test set buffer size');
   expect(mockExport.mock.calls.length).toBe(1);
 });
 
 test('SimpleLogger buffer is full', () => {
-  ace.logger.setBufferSize(2);
+  ace.setBufferSize(2);
   ace.logger.info('test set buffer size');
   ace.logger.info('test set buffer size');
   expect(mockExport.mock.calls.length).toBe(1);

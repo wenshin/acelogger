@@ -1,4 +1,13 @@
-import { Manager, Logger, Tracer, Timer } from './api';
+import {
+  Manager,
+  Logger,
+  Tracer,
+  Timer,
+  ExportResult,
+  LogLevel,
+  LoggerEvent,
+  LoggerEventExporter
+} from './api';
 import SimpleLogger from './SimpleLogger';
 import SimpleTracer from './SimpleTracer';
 
@@ -6,10 +15,21 @@ const defaultTimer = {
   now: () => Date.now()
 };
 
+enum RegisterKeys {
+  Logger = 'logger',
+  Tracer = 'tracer',
+  Timer = 'timer'
+}
+
 export default class SimpleManager implements Manager {
+  public eventBuffer: Map<LogLevel, LoggerEvent[]> = new Map();
+
   private defaultLogger: Logger;
   private defaultTracer: Tracer;
   private registries = new Map<string, any>();
+  private exporterMap: Map<LogLevel, LoggerEventExporter[]> = new Map();
+  private bufferCount: number = 0;
+  private bufferSize: number = 10;
 
   constructor() {
     this.defaultLogger = new SimpleLogger();
@@ -26,7 +46,7 @@ export default class SimpleManager implements Manager {
   }
 
   get logger(): Logger {
-    return this.registries.get('logger') || this.defaultLogger;
+    return this.registries.get(RegisterKeys.Logger) || this.defaultLogger;
   }
 
   public setTracer(tracer: Tracer | null): void {
@@ -37,14 +57,83 @@ export default class SimpleManager implements Manager {
   }
 
   get tracer(): Tracer {
-    return this.registries.get('tracer') || this.defaultTracer;
+    return this.registries.get(RegisterKeys.Tracer) || this.defaultTracer;
   }
 
   public setTimer(timer: Timer | null): void {
-    this.registries.set('timer', timer);
+    this.registries.set(RegisterKeys.Timer, timer);
   }
 
   get timer(): Timer {
-    return this.registries.get('timer') || defaultTimer;
+    return this.registries.get(RegisterKeys.Timer) || defaultTimer;
+  }
+
+  public setBufferSize(size: number): void {
+    this.bufferSize = size;
+  }
+
+  public setExporter(level: LogLevel, exportor: LoggerEventExporter): this {
+    Object.keys(LogLevel).forEach(l => {
+      const levelValue = LogLevel[l];
+      // set LogLevel.Info exporter, will alse set all levels which greater than LogLevel.Info;
+      if (typeof levelValue === 'number' && levelValue >= level) {
+        const arr = this.exporterMap.get(levelValue) || [];
+        arr.push(exportor);
+        this.exporterMap.set(levelValue, arr);
+      }
+    });
+    return this;
+  }
+
+  public addEvent(evt: LoggerEvent): this {
+    if (this.bufferSize <= 1) {
+      this.export(evt.level, [evt]);
+    } else {
+      const evts = this.eventBuffer.get(evt.level) || [];
+      evts.push(evt);
+      this.bufferCount++;
+      this.eventBuffer.set(evt.level, evts);
+
+      if (this.bufferCount >= this.bufferSize) {
+        this.flush();
+      }
+    }
+    return this;
+  }
+
+  public flush(): void {
+    // 1. if exporters exist, export all events
+    this.eventBuffer.forEach((evts, key) => {
+      this.export(key, evts);
+    });
+    // 2. reset eventBuffer anyway
+    this.eventBuffer = new Map();
+    this.bufferCount = 0;
+    return;
+  }
+
+  private export(level: LogLevel, evts: LoggerEvent[]): void {
+    try {
+      const exporters = this.exporterMap.get(level);
+      if (exporters) {
+        exporters.forEach(exporter => {
+          exporter.export(evts, result => {
+            if (result !== ExportResult.SUCCESS) {
+              // TODO: report error to some exporter
+              /* tslint:disable no-console */
+              console.error(
+                `Failed export event with ${
+                  result === ExportResult.FAILED_NOT_RETRYABLE ? 'no' : ''
+                } retry`
+              );
+            }
+          });
+        });
+      }
+    } catch (err) {
+      // TODO: report error to some exporter
+      /* tslint:disable no-console */
+      console.error('Failed export events with error', err);
+    }
   }
 }

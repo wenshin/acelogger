@@ -1,10 +1,8 @@
 import {
   Logger,
   LoggerEvent,
-  LoggerEventExporter,
   LogLevel,
   EventType,
-  ExportResult,
   SpanLogger,
   CanonicalCode,
   LoggerAttributes,
@@ -37,10 +35,6 @@ export default class SimpleLogger implements Logger {
     lib: 'acelogger@0.5.2',
     logger: 'acelogger'
   };
-  private bufferSize: number = 10;
-  private bufferCount: number = 0;
-  private eventBuffer: Map<LogLevel, LoggerEvent[]> = new Map();
-  private exporterMap: Map<LogLevel, LoggerEventExporter[]> = new Map();
 
   public setAttributes(attrs: LoggerAttributes): void {
     Object.assign(this.attributes, attrs);
@@ -136,8 +130,6 @@ export default class SimpleLogger implements Logger {
     const logger = new SimpleLogger();
     logger.span = span;
     logger.manager = this.manager;
-    logger.exporterMap = this.exporterMap;
-    logger.bufferSize = this.bufferSize;
     logger.setAttributes({
       ...this.attributes,
       ...span.attributes,
@@ -182,33 +174,8 @@ export default class SimpleLogger implements Logger {
     this.innerLog(e);
   }
 
-  public setExporter(level: LogLevel, exportor: LoggerEventExporter): this {
-    Object.keys(LogLevel).forEach(l => {
-      const levelValue = LogLevel[l];
-      // set LogLevel.Info exporter, will alse set all levels which greater than LogLevel.Info;
-      if (typeof levelValue === 'number' && levelValue >= level) {
-        const arr = this.exporterMap.get(levelValue) || [];
-        arr.push(exportor);
-        this.exporterMap.set(levelValue, arr);
-      }
-    });
-    return this;
-  }
-
-  public setBufferSize(size: number): this {
-    this.bufferSize = size;
-    return this;
-  }
-
   public flush(): void {
-    // 1. if exporters exist, export all events
-    this.eventBuffer.forEach((evts, key) => {
-      this.export(key, evts);
-    });
-    // 2. reset eventBuffer anyway
-    this.eventBuffer = new Map();
-    this.bufferCount = 0;
-    return;
+    this.manager.flush();
   }
 
   private innerLog(evt: LoggerEvent): void {
@@ -242,48 +209,6 @@ export default class SimpleLogger implements Logger {
       };
     }
 
-    try {
-      if (this.bufferSize <= 1) {
-        this.export(evt.level, [evt]);
-      } else {
-        const evts = this.eventBuffer.get(evt.level) || [];
-        evts.push(evt);
-        this.bufferCount++;
-        this.eventBuffer.set(evt.level, evts);
-
-        if (this.bufferCount >= this.bufferSize) {
-          this.flush();
-        }
-      }
-    } catch (err) {
-      // TODO: report error to some exporter
-      /* tslint:disable no-console */
-      console.error('Failed export events with error', err);
-    }
-  }
-
-  private export(level: LogLevel, evts: LoggerEvent[]): void {
-    try {
-      const exporters = this.exporterMap.get(level);
-      if (exporters) {
-        exporters.forEach(exporter => {
-          exporter.export(evts, result => {
-            if (result !== ExportResult.SUCCESS) {
-              // TODO: report error to some exporter
-              /* tslint:disable no-console */
-              console.error(
-                `Failed export event with ${
-                  result === ExportResult.FAILED_NOT_RETRYABLE ? 'no' : ''
-                } retry`
-              );
-            }
-          });
-        });
-      }
-    } catch (err) {
-      // TODO: report error to some exporter
-      /* tslint:disable no-console */
-      console.error('Failed export events with error', err);
-    }
+    this.manager.addEvent(evt);
   }
 }

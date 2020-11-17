@@ -1,5 +1,3 @@
-import { LogLevel } from './consts';
-import { LoggerEventExporter } from './LoggerEventExporter';
 import { LoggerEvent, LoggerAttributes } from './LoggerEvent';
 import { SpanStruct } from './Span';
 import { Manager } from './Manager';
@@ -63,18 +61,6 @@ export interface Logger {
    * record any events
    */
   event(name: string, evt?: LoggerEvent): void;
-
-  /**
-   * @param level    great than the level will use the exporter.
-   * @param exporter the exporter to send data to server.
-   */
-  setExporter(level: LogLevel, exporter: LoggerEventExporter): this;
-
-  /**
-   * set the buffer size, the implemetion should have a default size
-   * @param size
-   */
-  setBufferSize(size: number): this;
 
   /**
    * export all buffered events immediately
