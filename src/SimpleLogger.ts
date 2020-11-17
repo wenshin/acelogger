@@ -32,7 +32,7 @@ export default class SimpleLogger implements Logger {
   public manager: Manager;
   public span?: SpanStruct;
   private attributes: LoggerAttributes = {
-    lib: 'acelogger@0.5.2',
+    lib: 'acelogger@0.6.0',
     logger: 'acelogger'
   };
 

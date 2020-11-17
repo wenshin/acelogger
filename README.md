@@ -67,11 +67,11 @@ class MetricExporterWeb implements LoggerEventExporter {
 }
 
 // set event exporter, for mesage logging
-ace.logger.setExporter(LogLevel.Debug, new ConsoleExporterWeb());
+ace.setExporter(LogLevel.Debug, new ConsoleExporterWeb());
 // set event exporter, for metric reportings
-ace.logger.setExporter(LogLevel.Debug, new MetricExporterWeb());
+ace.setExporter(LogLevel.Debug, new MetricExporterWeb());
 // export events immediately
-ace.logger.setBufferSize(0);
+ace.setBufferSize(0);
 
 // log info level message
 ace.logger.info('test info');
@@ -119,8 +119,8 @@ manager.logger.setAttributes({
 });
 
 // init logger exporter
-manager.logger.setExporter(LogLevel.Debug, new ConsoleExporterWeb());
-manager.logger.setBufferSize(0);
+manager.setExporter(LogLevel.Debug, new ConsoleExporterWeb());
+manager.setBufferSize(0);
 
 export { manager as ace };
 ```
@@ -133,7 +133,7 @@ you can customize a exporter
 import ace, { TraceFlags, SimpleManager, LogLevel, ConsoleExporterWeb, isCountEvent } from 'acelogger';
 
 // init logger exporter
-manager.logger.setExporter(LogLevel.Debug, {
+manager.setExporter(LogLevel.Debug, {
   export(
     events: LoggerEvent[],
     resultCallback: (result: ExportResult) => void
@@ -158,6 +158,10 @@ manager.logger.setExporter(LogLevel.Debug, {
 [See Details](./src/api)
 
 # ChangeLog
+
+#### 2020-11-17 0.6.0 Breaking Change
+
+- refactor: move setExporter & setBufferSize to Manager
 
 #### 2020-11-17 0.5.2
 
