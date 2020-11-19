@@ -45,10 +45,7 @@ export interface LogParms {
   status?: CanonicalCode;
 }
 
-export type MetricsParams = Omit<
-  LoggerEventParams,
-  'metrics' | 'status' | 'time'
-> & {
+export type MetricsParams = Omit<LoggerEventParams, 'metrics' | 'time'> & {
   metrics: { [key: string]: number | string };
 };
 

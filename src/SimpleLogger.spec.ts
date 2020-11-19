@@ -297,6 +297,7 @@ test('SimpleLogger buffer is full', () => {
 
 test('SimpleLogger::storeMetrics', () => {
   ace.logger.storeMetrics({
+    status: CanonicalCode.INTERNAL,
     message: 'test-store-message',
     metrics: {
       cpuUsage: 0.1
@@ -305,8 +306,9 @@ test('SimpleLogger::storeMetrics', () => {
   ace.logger.flush();
   const evts = mockExport.mock.calls[0][0];
   expect(evts[0].name).toBe('metric.store');
+  expect(evts[0].status).toBe(CanonicalCode.INTERNAL);
   expect(evts[0].message).toBe('store {"cpuUsage":0.1}, test-store-message');
-  expect(evts[0].level).toBe(LogLevel.Debug);
+  expect(evts[0].level).toBe(LogLevel.Error);
   expect(evts[0].metrics).toEqual({
     cpuUsage: 0.1
   });
@@ -321,6 +323,8 @@ test('SimpleLogger::storeMetrics without message', () => {
   ace.logger.flush();
   const evts = mockExport.mock.calls[0][0];
   expect(evts[0].message).toBe('store {"cpuUsage":0.1}');
+  expect(evts[0].status).toBe(CanonicalCode.OK);
+  expect(evts[0].level).toBe(LogLevel.Debug);
 });
 
 test('SimpleLogger::event without message', () => {
