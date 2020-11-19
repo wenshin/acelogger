@@ -11,10 +11,10 @@ opentelemetry, opentracing and other libraries, are hard to understand and use.
 1. too many concepts. TracerProvider, Tracer, SpanProcessor, Span, Logger, Event, Metric, MetricProvider etc.
 2. large code size
 
-   1. @opentelemetry/tracing Minimized 39.9kb
-   2. @opentelemetry/api Minimized 13.8kb
-   3. @opentelemetry/web Minimized 46.1kb
-   4. acelogger minimized 22kb
+   1. @opentelemetry/tracing minimized 39.9kb
+   2. @opentelemetry/api minimized 13.8kb
+   3. @opentelemetry/web minimized 46.1kb
+   4. acelogger minimized < 10kb
 
 3. bad design
 
