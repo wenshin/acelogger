@@ -1,12 +1,5 @@
-import { isCountEvent, getLogLevelByStatus } from '.';
-import { LogLevel, CanonicalCode, EventType } from './api';
-
-test('utils::isCountEvent', () => {
-  expect(isCountEvent({ type: EventType.Log })).toBeFalsy();
-  expect(isCountEvent({ type: EventType.Event })).toBeTruthy();
-  expect(isCountEvent({ type: EventType.Tracing })).toBeTruthy();
-  expect(isCountEvent({ type: EventType.Metric })).toBeFalsy();
-});
+import { getLogLevelByStatus } from '.';
+import { LogLevel, CanonicalCode } from './api';
 
 test('utils::getLogLevelByStatus', () => {
   expect(getLogLevelByStatus(CanonicalCode.OK)).toBe(LogLevel.Debug);
