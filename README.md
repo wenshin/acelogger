@@ -159,6 +159,10 @@ manager.setExporter(LogLevel.Debug, {
 
 # ChangeLog
 
+#### 2020-11-18 0.7.1
+
+- fix: storeMetrics support status
+
 #### 2020-11-18 0.7.0 Breaking Change
 
 - refactor: LoggerEvent structure changed
