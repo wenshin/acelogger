@@ -159,6 +159,11 @@ manager.setExporter(LogLevel.Debug, {
 
 # ChangeLog
 
+#### 2020-11-18 0.7.0 Breaking Change
+
+- refactor: LoggerEvent structure changed
+- refactor: remove isCountEvent
+
 #### 2020-11-17 0.6.0 Breaking Change
 
 - refactor: move setExporter & setBufferSize to Manager
