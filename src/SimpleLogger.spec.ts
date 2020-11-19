@@ -114,6 +114,10 @@ test('SimpleLogger::startSpan with remote context', () => {
   expect(args[0][0].metrics).toEqual({
     'test.span.start.latency': spanmetrics.startTime - spanmetrics.userStartTime
   });
+  expect(args[0][0].data).toEqual({
+    spanId: spanmetrics.context.spanId,
+    traceId: spanmetrics.context.traceId
+  });
 });
 
 test('SimpleLogger::startSpan start sub span', () => {
@@ -233,19 +237,19 @@ test('SimpleLogger::endSpan whitout span', () => {
 
 test('SimpleLogger log message whitout span', () => {
   ace.logger.debug('test debug', {
-    metrics: { test: 'debug' }
+    data: { test: 'debug' }
   });
   ace.logger.info('test info', {
-    metrics: { test: 'info' }
+    data: { test: 'info' }
   });
   ace.logger.warn('test warn', {
-    metrics: { test: 'warn' }
+    data: { test: 'warn' }
   });
   ace.logger.error(new Error('test error'), {
-    metrics: { test: 'error' }
+    data: { test: 'error' }
   });
   ace.logger.fatal(new Error('test fatal'), {
-    metrics: { test: 'fatal' }
+    data: { test: 'fatal' }
   });
   ace.logger.flush();
 
@@ -257,8 +261,10 @@ test('SimpleLogger log message whitout span', () => {
     expect(evts[0].name).toBe(`log.${levels[i]}`);
     expect(evts[0].message).toBe('test ' + levels[i]);
     expect(evts[0].level).toBe(i);
-    expect(evts[0].traceFlags).toBe(undefined);
-    expect(evts[0].metrics).toEqual({
+    expect(evts[0].traceFlags).toBe(TraceFlags.NONE);
+    expect(evts[0].data).toEqual({
+      spanId: '0',
+      traceId: '0',
       test: levels[i]
     });
     if (levels[i] === 'error' || levels[i] === 'fatal') {
@@ -341,7 +347,7 @@ test('SimpleLogger::event with message', () => {
 
 test('SimpleLogger::setAttributes update logger name and version', () => {
   ace.logger.debug('test debug', {
-    metrics: { test: 'debug' }
+    data: { test: 'debug' }
   });
   ace.logger.flush();
   const evts = mockExport.mock.calls[0][0];
@@ -349,7 +355,9 @@ test('SimpleLogger::setAttributes update logger name and version', () => {
     app: 'test-app',
     appVersion: '0.0.1',
     logger: 'acelogger',
-    lib: `${pkg.name}@${pkg.version}`
+    lib: `${pkg.name}@${pkg.version}`,
+    spanKind: 0,
+    spanName: 'unknown'
   });
 });
 
@@ -359,6 +367,8 @@ test('SimpleLogger::getAttributes', () => {
     app: 'test-app',
     appVersion: '0.0.1',
     logger: 'acelogger',
-    lib: `${pkg.name}@${pkg.version}`
+    lib: `${pkg.name}@${pkg.version}`,
+    spanKind: 0,
+    spanName: 'unknown'
   });
 });

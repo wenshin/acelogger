@@ -8,7 +8,12 @@ import {
   LoggerAttributes,
   SpanStruct,
   Manager,
-  SpanOptions
+  SpanOptions,
+  LogParms,
+  MetricsParams,
+  LoggerEventParams,
+  TraceFlags,
+  SpanKind
 } from './api';
 import { getLogLevelByStatus, getMillisecondsTime } from './utils';
 
@@ -33,7 +38,9 @@ export default class SimpleLogger implements Logger {
   public span?: SpanStruct;
   private attributes: LoggerAttributes = {
     lib: 'acelogger@0.6.0',
-    logger: 'acelogger'
+    logger: 'acelogger',
+    spanKind: SpanKind.INTERNAL,
+    spanName: 'unknown'
   };
 
   public setAttributes(attrs: LoggerAttributes): void {
@@ -44,12 +51,13 @@ export default class SimpleLogger implements Logger {
     return this.attributes;
   }
 
-  public debug(message: string, evt?: LoggerEvent): void {
+  public debug(message: string, evt?: LogParms): void {
     this.innerLog({
       ...evt,
       level: LogLevel.Debug,
       message,
-      name: 'log.debug'
+      name: 'log.debug',
+      type: EventType.Log
     });
   }
 
@@ -58,40 +66,44 @@ export default class SimpleLogger implements Logger {
       ...evt,
       level: LogLevel.Info,
       message,
-      name: 'log.info'
+      name: 'log.info',
+      type: EventType.Log
     });
   }
 
-  public warn(message: string, evt?: LoggerEvent): void {
+  public warn(message: string, evt?: LogParms): void {
     this.innerLog({
       ...evt,
       level: LogLevel.Warn,
       message,
-      name: 'log.warn'
+      name: 'log.warn',
+      type: EventType.Log
     });
   }
 
-  public error(error: Error, evt?: LoggerEvent): void {
+  public error(error: Error, evt?: LogParms): void {
     this.innerLog({
       ...evt,
       level: LogLevel.Error,
       message: error.message,
       name: 'log.error',
-      stack: error.stack
+      stack: error.stack,
+      type: EventType.Log
     });
   }
 
-  public fatal(error: Error, evt?: LoggerEvent): void {
+  public fatal(error: Error, evt?: LogParms): void {
     this.innerLog({
       ...evt,
       level: LogLevel.Fatal,
       message: error.message,
       name: 'log.fatal',
-      stack: error.stack
+      stack: error.stack,
+      type: EventType.Log
     });
   }
 
-  public storeMetrics(evt: LoggerEvent): void {
+  public storeMetrics(evt: MetricsParams): void {
     const msg = evt.message ? `, ${evt.message}` : '';
     this.innerLog({
       ...evt,
@@ -107,12 +119,14 @@ export default class SimpleLogger implements Logger {
    * @param name
    * @param evt
    */
-  public event(name: string, evt?: LoggerEvent): void {
-    const e = { ...evt };
-    e.name = name;
-    e.type = EventType.Event;
-    e.level = LogLevel.Info;
-    e.message = e.message || `log event: ${name}`;
+  public event(name: string, evt?: LoggerEventParams): void {
+    const e = {
+      ...evt,
+      level: LogLevel.Info,
+      message: (evt && evt.message) || `log event: ${name}`,
+      name,
+      type: EventType.Event
+    };
     this.innerLog(e);
   }
 
@@ -148,7 +162,7 @@ export default class SimpleLogger implements Logger {
     return logger as SpanLogger;
   }
 
-  public endSpan(evt?: LoggerEvent): void {
+  public endSpan(evt?: LoggerEventParams): void {
     if (!this.span) {
       this.error(new Error('logger.endSpan must call after logger.startSpan'));
       return;
@@ -178,37 +192,48 @@ export default class SimpleLogger implements Logger {
     this.manager.flush();
   }
 
-  private innerLog(evt: LoggerEvent): void {
-    if (this.span) {
-      evt.traceFlags =
-        evt.traceFlags === undefined || evt.traceFlags === null
-          ? this.span.context.traceFlags
-          : evt.traceFlags;
-    }
-
-    evt.attributes = {
+  private innerLog(
+    evt: LoggerEventParams & { name: string; type: EventType }
+  ): void {
+    let traceFlags = evt.traceFlags || TraceFlags.NONE;
+    const data: LoggerEvent['data'] = {
+      spanId: '0',
+      traceId: '0',
+      ...evt.data
+    };
+    const attributes: LoggerEvent['attributes'] = {
       ...this.attributes,
       ...evt.attributes
     };
 
-    if (!evt.status) {
-      evt.status = CanonicalCode.OK;
-    }
-
-    evt.level = Math.max(getLogLevelByStatus(evt.status), evt.level);
-
-    if (!evt.time) {
-      evt.time = this.manager.timer.now();
-    }
-
     if (this.span) {
-      evt.data = {
-        spanId: this.span.context.spanId,
-        traceId: this.span.context.traceId,
-        ...evt.data
-      };
+      if (evt.traceFlags === undefined || evt.traceFlags === null) {
+        traceFlags = this.span.context.traceFlags;
+      }
+
+      data.spanId = this.span.context.spanId;
+      data.traceId = this.span.context.traceId;
+
+      attributes.spanName = this.span.name;
+      attributes.spanKind = this.span.kind;
     }
 
-    this.manager.addEvent(evt);
+    const status = evt.status || CanonicalCode.OK;
+    const level = Math.max(getLogLevelByStatus(status), evt.level);
+    const time = evt.time || this.manager.timer.now();
+
+    this.manager.addEvent({
+      attributes,
+      data,
+      level,
+      message: evt.message,
+      metrics: evt.metrics,
+      name: evt.name,
+      stack: evt.stack,
+      status,
+      time,
+      traceFlags,
+      type: evt.type
+    });
   }
 }

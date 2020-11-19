@@ -2,45 +2,45 @@ import {
   CanonicalCode,
   Attributes,
   TimeInput,
-  SpanKind
+  SpanKind,
+  TraceFlags
 } from './opentelemetry';
 import { LogLevel, EventType } from './consts';
-import { TraceFlags } from '@opentelemetry/api/build/src/trace/trace_flags';
 
 export interface LoggerAttributes extends Attributes {
   // logger name
-  logger?: string;
+  logger: string;
   // logger lib name and version, like acelogger@0.0.2
-  lib?: string;
+  lib: string;
   // tracer attributes
-  spanName?: string;
-  spanKind?: SpanKind;
+  spanName: string;
+  spanKind: SpanKind;
 }
 
 export interface LoggerEvent {
   // event name
-  name?: string;
-  type?: EventType;
-  level?: LogLevel;
-  traceFlags?: TraceFlags;
-  // tags for event, always used to filter the event
-  attributes?: LoggerAttributes;
+  name: string;
+  type: EventType;
+  level: LogLevel;
+  traceFlags: TraceFlags;
   // metric data
   metrics?: {
     [key: string]: string | number;
   };
+  // tags for event, always used to filter the event
+  attributes: LoggerAttributes;
   //  any object data
-  data?: {
-    spanId?: string;
-    traceId?: string;
+  data: {
+    spanId: string;
+    traceId: string;
     [key: string]: any;
   };
   // error status code
-  status?: CanonicalCode;
+  status: CanonicalCode;
   // error message for event
-  message?: string;
+  message: string;
   // error stack, only exist when level is EventLevel.Error
   stack?: string;
   // event trigger times
-  time?: TimeInput;
+  time: TimeInput;
 }
