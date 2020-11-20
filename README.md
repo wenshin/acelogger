@@ -159,6 +159,10 @@ manager.setExporter(LogLevel.Debug, {
 
 # ChangeLog
 
+#### 2020-11-18 0.7.2
+
+- fix: use strict rule for function type
+
 #### 2020-11-18 0.7.1
 
 - fix: storeMetrics support status
