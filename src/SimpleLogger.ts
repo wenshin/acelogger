@@ -61,7 +61,7 @@ export default class SimpleLogger implements Logger {
     });
   }
 
-  public info(message: string, evt?: LoggerEvent): void {
+  public info(message: string, evt?: LogParms): void {
     this.innerLog({
       ...evt,
       level: LogLevel.Info,
