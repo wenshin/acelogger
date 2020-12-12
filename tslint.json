@@ -21,6 +21,7 @@
     "no-object-mutation": false,
     "no-delete": true,
     "no-method-signature": false,
+    "prefer-object-spread": false,
 
     // Functional style rules
     "no-this": false,

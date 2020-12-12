@@ -20,6 +20,7 @@ setTimeout(() => {
   spanLogger.warn('test span warn');
   spanLogger.error(new Error('test span error'));
   spanLogger.endSpan();
+  spanLogger.flush();
 }, 2000);
 
 // create sub span
@@ -33,6 +34,7 @@ setTimeout(() => {
   span1.endSpan({
     status: CanonicalCode.UNKNOWN
   });
+  span1.flush();
 }, 4000);
 
 // module logging
@@ -40,3 +42,4 @@ myModuleAce.logger.debug('test module debug');
 myModuleAce.logger.info('test module info');
 myModuleAce.logger.warn('test module warn');
 myModuleAce.logger.error(new Error('test module error'));
+myModuleAce.flush();

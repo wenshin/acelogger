@@ -1,7 +1,35 @@
-import { LoggerEventExporter, LoggerEvent, ExportResult } from '../api';
-import { adaptToBrowserConsole } from './console';
+import {
+  LoggerEventExporter,
+  LoggerEvent,
+  ExportResult,
+  LogLevel
+} from '../api';
+import { adaptToJSConsole, formatSection, LogLevelTitleMap } from './console';
 
-export default class ConsoleExporterNode implements LoggerEventExporter {
+export function adaptToBrowserConsole(evt: LoggerEvent): void {
+  const debugConfig = (((window as any).__debug as string) || '').split(',');
+  const isAllowDebug =
+    debugConfig.includes(evt.attributes.spanName) || debugConfig.includes('*');
+  if (isAllowDebug || evt.level >= LogLevel.Warn) {
+    adaptToJSConsole(evt, formatBrowserConsole);
+  }
+}
+
+/**
+ * format evt to be a colorful output in browser console
+ * @param evt
+ */
+export function formatBrowserConsole(evt: LoggerEvent): any[] {
+  const statusColor = evt.level < LogLevel.Warn ? '#bbbbbb' : '#FF7043';
+  return [
+    `%c${LogLevelTitleMap[evt.level]} ${formatSection(evt)}`,
+    `font-weight: bold; color: ${statusColor};`,
+    `"${evt.message || 'no message'}"`,
+    evt
+  ];
+}
+
+export default class ConsoleExporterWeb implements LoggerEventExporter {
   private stoped: boolean = false;
   public export(evts: LoggerEvent[], cb: (stats: ExportResult) => void): void {
     if (this.stoped) {

@@ -1,6 +1,6 @@
 import { LoggerEvent, LogLevel } from '../api';
 
-function formatSection(evt: LoggerEvent): string {
+export function formatSection(evt: LoggerEvent): string {
   const attrs = evt.attributes || ({} as any);
   const spanName = attrs.spanName ? '|' + attrs.spanName : '';
   const spanId = attrs.spanId ? '|' + attrs.spanId : '';
@@ -13,34 +13,6 @@ export const LogLevelTitleMap = {
   [LogLevel.Warn]: 'WARN',
   [LogLevel.Error]: 'ERROR'
 };
-
-/**
- * format evt to be a colorful output in browser console
- * @param evt
- */
-export function formatBrowserConsole(evt: LoggerEvent): any[] {
-  const statusColor = evt.level < LogLevel.Warn ? '#bbbbbb' : '#FF7043';
-  return [
-    `%c${LogLevelTitleMap[evt.level]} ${formatSection(evt)}`,
-    `font-weight: bold; color: ${statusColor};`,
-    `"${evt.message || 'no message'}"`,
-    evt
-  ];
-}
-
-/**
- * format evt to be a colorful output in node console
- * @param evt
- */
-export function formatNodeConsole(evt: LoggerEvent): any[] {
-  const statusColor = evt.level < LogLevel.Warn ? '32' : '31';
-  return [
-    `\x1b[${statusColor}m${LogLevelTitleMap[evt.level]}\x1b[0m`,
-    formatSection(evt),
-    `"${evt.message || 'no message'}"`,
-    evt
-  ];
-}
 
 /* tslint:disable: no-console */
 export function adaptToJSConsole(
@@ -70,11 +42,3 @@ export function adaptToJSConsole(
   }
 }
 /* tslint:enable */
-
-export function adaptToBrowserConsole(evt: LoggerEvent): void {
-  adaptToJSConsole(evt, formatBrowserConsole);
-}
-
-export function adaptToNodeConsole(evt: LoggerEvent): void {
-  adaptToJSConsole(evt, formatNodeConsole);
-}
