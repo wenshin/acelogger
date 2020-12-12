@@ -9,6 +9,7 @@ export interface Manager {
   readonly logger: Logger;
   readonly tracer: Tracer;
   readonly timer: Timer;
+  readonly flushing: boolean;
   eventBuffer: Map<LogLevel, LoggerEvent[]>;
   setLogger(logger: Logger | null): void;
   setTracer(tracer: Tracer | null): void;
@@ -27,5 +28,5 @@ export interface Manager {
   /**
    * export all cached events
    */
-  flush(): void;
+  flush(cb?: () => void): void;
 }

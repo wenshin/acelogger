@@ -58,7 +58,7 @@ export default class SimpleTracer implements Tracer {
   }
 
   public createSpanContext(ctx?: SpanContextConfig): SpanContext {
-    const c = { ...ctx };
+    const c = Object.assign({}, ctx);
     const traceId = c.traceId || createTraceId();
     return {
       isRemote: c.isRemote,

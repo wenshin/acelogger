@@ -1,4 +1,32 @@
 import ace, { SimpleLogger, SimpleManager, SimpleTracer } from '.';
+import {
+  EventType,
+  ExportResult,
+  LoggerEvent,
+  LoggerEventExporter,
+  LogLevel
+} from './api';
+
+function createManager() {
+  const manager = new SimpleManager();
+  const mockExport = jest.fn();
+  class Exporter implements LoggerEventExporter {
+    public export(
+      evts: LoggerEvent[],
+      cb: (result: ExportResult) => void
+    ): void {
+      mockExport(evts, cb);
+      cb(ExportResult.SUCCESS);
+    }
+
+    public shutdown(): void {
+      return;
+    }
+  }
+  manager.setExporter(LogLevel.Debug, new Exporter());
+
+  return { manager, mockExport };
+}
 
 test('SimpleManager::singleton', () => {
   expect(ace instanceof SimpleManager).toBe(true);
@@ -32,4 +60,13 @@ test('SimpleManager::setLogger', () => {
   const oldLogger = manager.logger;
   manager.setLogger(new SimpleLogger());
   expect(oldLogger === manager.logger).toBeFalsy();
+});
+
+test('SimpleManager::flush latency', done => {
+  const manager = new SimpleManager();
+  const start = Date.now();
+  manager.flush(() => {
+    expect(Date.now() - start < 5).toBeTruthy();
+    done();
+  });
 });

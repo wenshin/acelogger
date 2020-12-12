@@ -15,5 +15,4 @@ ace.logger.setAttributes({
 });
 
 // init logger exporter
-ace.logger.setExporter(LogLevel.Debug, new ConsoleExporterWeb());
-ace.logger.setBufferSize(0);
+ace.setExporter(LogLevel.Debug, new ConsoleExporterWeb());

@@ -52,66 +52,72 @@ export default class SimpleLogger implements Logger {
   }
 
   public debug(message: string, evt?: LogParms): void {
-    this.innerLog({
-      ...evt,
-      level: LogLevel.Debug,
-      message,
-      name: 'log.debug',
-      type: EventType.Log
-    });
+    this.innerLog(
+      Object.assign({}, evt, {
+        level: LogLevel.Debug,
+        message,
+        name: 'log.debug',
+        type: EventType.Log
+      })
+    );
   }
 
   public info(message: string, evt?: LogParms): void {
-    this.innerLog({
-      ...evt,
-      level: LogLevel.Info,
-      message,
-      name: 'log.info',
-      type: EventType.Log
-    });
+    this.innerLog(
+      Object.assign({}, evt, {
+        level: LogLevel.Info,
+        message,
+        name: 'log.info',
+        type: EventType.Log
+      })
+    );
   }
 
   public warn(message: string, evt?: LogParms): void {
-    this.innerLog({
-      ...evt,
-      level: LogLevel.Warn,
-      message,
-      name: 'log.warn',
-      type: EventType.Log
-    });
+    this.innerLog(
+      Object.assign({}, evt, {
+        level: LogLevel.Warn,
+        message,
+        name: 'log.warn',
+        type: EventType.Log
+      })
+    );
   }
 
   public error(error: Error, evt?: LogParms): void {
-    this.innerLog({
-      ...evt,
-      level: LogLevel.Error,
-      message: error.message,
-      name: 'log.error',
-      stack: error.stack,
-      type: EventType.Log
-    });
+    this.innerLog(
+      Object.assign({}, evt, {
+        level: LogLevel.Error,
+        message: error.message,
+        name: 'log.error',
+        stack: error.stack,
+        type: EventType.Log
+      })
+    );
   }
 
   public fatal(error: Error, evt?: LogParms): void {
-    this.innerLog({
-      ...evt,
-      level: LogLevel.Fatal,
-      message: error.message,
-      name: 'log.fatal',
-      stack: error.stack,
-      type: EventType.Log
-    });
+    this.innerLog(
+      Object.assign({}, evt, {
+        level: LogLevel.Fatal,
+        message: error.message,
+        name: 'log.fatal',
+        stack: error.stack,
+        type: EventType.Log
+      })
+    );
   }
 
   public storeMetrics(evt: MetricsParams): void {
     const msg = evt.message ? `, ${evt.message}` : '';
-    this.innerLog({
-      ...evt,
-      level: evt.level || LogLevel.Debug,
-      message: `store ${JSON.stringify(evt.metrics)}${msg}`,
-      name: 'metric.store',
-      type: EventType.Metric
-    });
+    this.innerLog(
+      Object.assign({}, evt, {
+        level: evt.level || LogLevel.Debug,
+        message: `store ${JSON.stringify(evt.metrics)}${msg}`,
+        name: 'metric.store',
+        type: EventType.Metric
+      })
+    );
   }
 
   /**
@@ -120,13 +126,12 @@ export default class SimpleLogger implements Logger {
    * @param evt
    */
   public event(name: string, evt?: LoggerEventParams): void {
-    const e = {
-      ...evt,
+    const e = Object.assign({}, evt, {
       level: LogLevel.Info,
       message: (evt && evt.message) || `log event: ${name}`,
       name,
       type: EventType.Event
-    };
+    });
     this.innerLog(e);
   }
 
@@ -134,22 +139,21 @@ export default class SimpleLogger implements Logger {
   // endSpan, throw end event with duration
   public startSpan(name: string, options?: SpanOptions): SpanLogger {
     const opts = this.span
-      ? {
-          ...options,
+      ? Object.assign({}, options, {
           parent: this.span.context
-        }
+        })
       : options;
 
     const span = this.manager.tracer.createSpan(name, opts);
     const logger = new SimpleLogger();
     logger.span = span;
     logger.manager = this.manager;
-    logger.setAttributes({
-      ...this.attributes,
-      ...span.attributes,
-      spanKind: span.kind,
-      spanName: span.name
-    });
+    logger.setAttributes(
+      Object.assign({}, this.attributes, span.attributes, {
+        spanKind: span.kind,
+        spanName: span.name
+      })
+    );
     logger.innerLog({
       level: LogLevel.Info,
       message: `${span.name}.start`,
@@ -168,43 +172,49 @@ export default class SimpleLogger implements Logger {
       return;
     }
 
-    const e = {
-      ...evt,
+    const e = Object.assign({}, evt, {
       name: `${this.span.name}.end`,
       type: EventType.Tracing
-    };
+    });
 
     e.level = e.level || LogLevel.Info;
 
     this.span.endTime = getMillisecondsTime(e.time) || this.manager.timer.now();
     const duration = this.span.endTime - this.span.startTime;
-    e.metrics = {
-      [`${this.span.name}.duration`]: duration,
-      ...e.metrics
-    };
+    e.metrics = Object.assign(
+      {},
+      {
+        [`${this.span.name}.duration`]: duration
+      },
+      e.metrics
+    );
 
     const msg = e.message ? `, ${e.message}` : '';
     e.message = `${this.span.name} end with ${duration}ms${msg}`;
     this.innerLog(e);
   }
 
-  public flush(): void {
-    this.manager.flush();
+  public flush(cb?: () => void): void {
+    this.manager.flush(cb);
   }
 
   private innerLog(
     evt: LoggerEventParams & { name: string; type: EventType }
   ): void {
     let traceFlags = evt.traceFlags || TraceFlags.NONE;
-    const data: LoggerEvent['data'] = {
-      spanId: '0',
-      traceId: '0',
-      ...evt.data
-    };
-    const attributes: LoggerEvent['attributes'] = {
-      ...this.attributes,
-      ...evt.attributes
-    };
+    const data: LoggerEvent['data'] = Object.assign(
+      {},
+      {
+        spanId: '0',
+        traceId: '0'
+      },
+      evt.data
+    );
+    const attributes: LoggerEvent['attributes'] = Object.assign(
+      {},
+      this.attributes,
+      evt.attributes
+    );
 
     if (this.span) {
       if (evt.traceFlags === undefined || evt.traceFlags === null) {

@@ -9,6 +9,5 @@ manager.logger.setAttributes({
 
 // init logger exporter
 manager.setExporter(LogLevel.Debug, new ConsoleExporterWeb());
-manager.setBufferSize(0);
 
 export { manager as myModuleAce };

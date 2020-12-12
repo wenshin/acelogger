@@ -117,5 +117,5 @@ export interface Logger {
   /**
    * export all buffered events immediately
    */
-  flush(): void;
+  flush(cb?: () => void): void;
 }

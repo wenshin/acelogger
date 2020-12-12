@@ -30,6 +30,7 @@ export default class SimpleManager implements Manager {
   private exporterMap: Map<LogLevel, LoggerEventExporter[]> = new Map();
   private bufferCount: number = 0;
   private bufferSize: number = 10;
+  private flushTimer: NodeJS.Timeout;
 
   constructor() {
     this.defaultLogger = new SimpleLogger();
@@ -86,30 +87,39 @@ export default class SimpleManager implements Manager {
   }
 
   public addEvent(evt: LoggerEvent): this {
-    if (this.bufferSize <= 1) {
-      this.export(evt.level, [evt]);
-    } else {
-      const evts = this.eventBuffer.get(evt.level) || [];
-      evts.push(evt);
-      this.bufferCount++;
-      this.eventBuffer.set(evt.level, evts);
+    const evts = this.eventBuffer.get(evt.level) || [];
+    evts.push(evt);
+    this.bufferCount++;
+    this.eventBuffer.set(evt.level, evts);
 
-      if (this.bufferCount >= this.bufferSize) {
-        this.flush();
-      }
+    if (this.bufferCount >= this.bufferSize) {
+      this.flush();
     }
     return this;
   }
 
-  public flush(): void {
-    // 1. if exporters exist, export all events
-    this.eventBuffer.forEach((evts, key) => {
-      this.export(key, evts);
-    });
-    // 2. reset eventBuffer anyway
-    this.eventBuffer = new Map();
-    this.bufferCount = 0;
-    return;
+  public flush(cb?: () => void): void {
+    if (this.flushTimer) {
+      return;
+    }
+
+    this.flushTimer = setTimeout(() => {
+      // 1. if exporters exist, export all events
+      this.eventBuffer.forEach((evts, key) => {
+        this.export(key, evts);
+      });
+      // 2. reset eventBuffer anyway
+      this.eventBuffer = new Map();
+      this.bufferCount = 0;
+      this.flushTimer = null;
+      if (cb) {
+        cb();
+      }
+    }, 0);
+  }
+
+  get flushing(): boolean {
+    return !!this.flushTimer;
   }
 
   private export(level: LogLevel, evts: LoggerEvent[]): void {
