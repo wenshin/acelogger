@@ -159,6 +159,11 @@ manager.setExporter(LogLevel.Debug, {
 
 # ChangeLog
 
+#### 2020-12-12 0.7.3
+
+- optimize: async flush events
+- optimize: console expoter default only print warn, error, fatal logs
+
 #### 2020-11-18 0.7.2
 
 - fix: use strict rule for function type
