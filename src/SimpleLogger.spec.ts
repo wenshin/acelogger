@@ -313,6 +313,39 @@ test('SimpleLogger log message whitout span', done => {
   });
 });
 
+test('SimpleLogger log error with string', done => {
+  const { ace, mockExport } = createMockLib();
+  ace.logger.error('test error', {
+    data: { test: 'error' }
+  });
+  ace.logger.fatal('test fatal', {
+    data: { test: 'fatal' }
+  });
+
+  ace.logger.flush(() => {
+    try {
+      expect(mockExport.mock.calls.length).toBe(2);
+
+      const levels = ['error', 'fatal'];
+      for (let i = 0; i < 2; i++) {
+        const evts = mockExport.mock.calls[i][0];
+        expect(evts[0].name).toBe(`log.${levels[i]}`);
+        expect(evts[0].message).toBe('test ' + levels[i]);
+        expect(evts[0].traceFlags).toBe(TraceFlags.NONE);
+        expect(evts[0].data).toEqual({
+          spanId: '0',
+          traceId: '0',
+          test: levels[i]
+        });
+        expect(evts[0].stack).toBeFalsy();
+      }
+      done();
+    } catch (err) {
+      done(err);
+    }
+  });
+});
+
 test('SimpleLogger log with traceFlag', done => {
   const { ace, mockExport } = createMockLib();
   ace.logger.info('test set buffer size', {

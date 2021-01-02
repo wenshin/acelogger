@@ -84,25 +84,41 @@ export default class SimpleLogger implements Logger {
     );
   }
 
-  public error(error: Error, evt?: LogParms): void {
+  public error(error: Error | string, evt?: LogParms): void {
+    let message = '';
+    let stack = '';
+    if (error instanceof Error) {
+      message = error.message;
+      stack = error.stack;
+    } else {
+      message = error;
+    }
     this.innerLog(
       Object.assign({}, evt, {
         level: LogLevel.Error,
-        message: error.message,
+        message,
         name: 'log.error',
-        stack: error.stack,
+        stack,
         type: EventType.Log
       })
     );
   }
 
-  public fatal(error: Error, evt?: LogParms): void {
+  public fatal(error: Error | string, evt?: LogParms): void {
+    let message = '';
+    let stack = '';
+    if (error instanceof Error) {
+      message = error.message;
+      stack = error.stack;
+    } else {
+      message = error;
+    }
     this.innerLog(
       Object.assign({}, evt, {
         level: LogLevel.Fatal,
-        message: error.message,
+        message,
         name: 'log.fatal',
-        stack: error.stack,
+        stack,
         type: EventType.Log
       })
     );
