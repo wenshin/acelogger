@@ -159,6 +159,11 @@ manager.setExporter(LogLevel.Debug, {
 
 # ChangeLog
 
+#### 2020-01-03 0.7.4
+
+- feat: support data option for Logger.startSpan
+- fix: logger.error and fatal not support string as message
+
 #### 2020-12-12 0.7.3
 
 - optimize: async flush events
