@@ -8,12 +8,12 @@ import {
   LoggerAttributes,
   SpanStruct,
   Manager,
-  SpanOptions,
   LogParms,
   MetricsParams,
   LoggerEventParams,
   TraceFlags,
-  SpanKind
+  SpanKind,
+  StartSpanEventOptions
 } from './api';
 import { getLogLevelByStatus, getMillisecondsTime } from './utils';
 
@@ -153,7 +153,7 @@ export default class SimpleLogger implements Logger {
 
   // startSpan, throw start event
   // endSpan, throw end event with duration
-  public startSpan(name: string, options?: SpanOptions): SpanLogger {
+  public startSpan(name: string, options?: StartSpanEventOptions): SpanLogger {
     const opts = this.span
       ? Object.assign({}, options, {
           parent: this.span.context
@@ -171,6 +171,7 @@ export default class SimpleLogger implements Logger {
       })
     );
     logger.innerLog({
+      data: opts && opts.data,
       level: LogLevel.Info,
       message: `${span.name}.start`,
       metrics: {

@@ -101,6 +101,7 @@ test('SimpleLogger::startSpan with remote context', done => {
       traceFlags: TraceFlags.SAMPLED,
       traceId: '123'
     },
+    data: { samplingRatio: 1 },
     startTime
   });
   const spanmetrics = logger.span;
@@ -117,6 +118,7 @@ test('SimpleLogger::startSpan with remote context', done => {
           spanmetrics.startTime - spanmetrics.userStartTime
       });
       expect(args[0][0].data).toEqual({
+        samplingRatio: 1,
         spanId: spanmetrics.context.spanId,
         traceId: spanmetrics.context.traceId
       });

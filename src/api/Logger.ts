@@ -35,6 +35,15 @@ export interface LoggerEventParams {
   time?: TimeInput;
 }
 
+export interface StartSpanEventOptions extends SpanOptions {
+  traceFlags?: TraceFlags;
+  data?: {
+    spanId?: string;
+    traceId?: string;
+    [key: string]: any;
+  };
+}
+
 export interface LogParms {
   traceFlags?: TraceFlags;
   // tags for event, always used to filter the event
@@ -83,7 +92,7 @@ export interface Logger {
    * @param name
    * @param options
    */
-  startSpan(name: string, options?: SpanOptions): SpanLogger;
+  startSpan(name: string, options?: StartSpanEventOptions): SpanLogger;
 
   /**
    * end span, and timing span and count span end event
