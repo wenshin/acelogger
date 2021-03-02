@@ -7,7 +7,9 @@ import {
 import { adaptToJSConsole, formatSection, LogLevelTitleMap } from './console';
 
 export function adaptToBrowserConsole(evt: LoggerEvent): void {
-  const debugConfig = (((window as any).__debug as string) || '').split(',');
+  const debugConfig = (((window as any).__ace_debug as string) || '').split(
+    ','
+  );
   const isAllowDebug =
     debugConfig.includes(evt.attributes.spanName) || debugConfig.includes('*');
   if (isAllowDebug || evt.level >= LogLevel.Warn) {

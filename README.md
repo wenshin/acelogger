@@ -159,7 +159,11 @@ manager.setExporter(LogLevel.Debug, {
 
 # ChangeLog
 
-#### 2020-01-03 0.7.4
+#### 2021-03-02 0.7.5
+
+- fix: change \_\_debug to \_\_ace_debug
+
+#### 2021-01-03 0.7.4
 
 - feat: support data option for Logger.startSpan
 - fix: logger.error and fatal not support string as message
