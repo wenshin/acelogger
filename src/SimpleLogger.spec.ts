@@ -147,6 +147,17 @@ test('SimpleLogger::startSpan start sub span', () => {
   expect(span2.context.traceId).toBe(logger1.span.context.traceId);
 });
 
+test('SimpleLogger::startSpan logStart is false', done => {
+  const { ace, mockExport } = createMockLib();
+  const logger1 = ace.logger.startSpan('test.span1', {
+    logStart: false
+  });
+  logger1.flush(() => {
+    expect(mockExport.mock.calls.length).toBe(0);
+    done();
+  });
+});
+
 test('SimpleLogger::endSpan without event argument', done => {
   const { ace, mockExport } = createMockLib();
   const logger = ace.logger.startSpan('test.span');

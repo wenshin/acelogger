@@ -36,6 +36,10 @@ export interface LoggerEventParams {
 }
 
 export interface StartSpanEventOptions extends SpanOptions {
+  /**
+   * 默认为 true，当设置为 false 时，不会记录 span start 事件
+   */
+  logStart?: boolean;
   traceFlags?: TraceFlags;
   data?: {
     spanId?: string;

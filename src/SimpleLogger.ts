@@ -170,16 +170,19 @@ export default class SimpleLogger implements Logger {
         spanName: span.name
       })
     );
-    logger.innerLog({
-      data: opts && opts.data,
-      level: LogLevel.Info,
-      message: `${span.name}.start`,
-      metrics: {
-        [`${span.name}.start.latency`]: span.startTime - span.userStartTime
-      },
-      name: `${span.name}.start`,
-      type: EventType.Tracing
-    });
+    const doNotLogStart = opts && opts.logStart === false;
+    if (!doNotLogStart) {
+      logger.innerLog({
+        data: opts && opts.data,
+        level: LogLevel.Info,
+        message: `${span.name}.start`,
+        metrics: {
+          [`${span.name}.start.latency`]: span.startTime - span.userStartTime
+        },
+        name: `${span.name}.start`,
+        type: EventType.Tracing
+      });
+    }
     return logger as SpanLogger;
   }
 
