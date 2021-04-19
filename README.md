@@ -159,6 +159,10 @@ manager.setExporter(LogLevel.Debug, {
 
 # ChangeLog
 
+#### 2021-03-02 0.8.0
+
+- feat: startSpan add logStart param to disable start span event
+
 #### 2021-03-02 0.7.5
 
 - fix: change \_\_debug to \_\_ace_debug
