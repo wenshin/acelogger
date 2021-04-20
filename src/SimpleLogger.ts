@@ -37,7 +37,7 @@ export default class SimpleLogger implements Logger {
   public manager: Manager;
   public span?: SpanStruct;
   private attributes: LoggerAttributes = {
-    lib: 'acelogger@0.8.0',
+    lib: 'acelogger@0.8.1',
     logger: 'acelogger',
     spanKind: SpanKind.INTERNAL,
     spanName: 'unknown'
@@ -156,8 +156,8 @@ export default class SimpleLogger implements Logger {
   public startSpan(name: string, options?: StartSpanEventOptions): SpanLogger {
     const opts = this.span
       ? Object.assign({}, options, {
-          parent: this.span.context
-        })
+        parent: this.span.context
+      })
       : options;
 
     const span = this.manager.tracer.createSpan(name, opts);

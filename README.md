@@ -159,7 +159,11 @@ manager.setExporter(LogLevel.Debug, {
 
 # ChangeLog
 
-#### 2021-03-02 0.8.0
+#### 2021-04-20 0.8.1
+
+- feat: add simplingRatio for event and disable log start event by default
+
+#### 2021-04-19 0.8.0
 
 - feat: startSpan add logStart param to disable start span event
 
