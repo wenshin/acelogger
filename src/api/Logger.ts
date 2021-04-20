@@ -13,6 +13,7 @@ import { LogLevel } from './consts';
 export interface LoggerEventParams {
   level?: LogLevel;
   traceFlags?: TraceFlags;
+  simplingRatio?: number;
   // tags for event, always used to filter the event
   attributes?: Attributes;
   // metric data
@@ -41,6 +42,7 @@ export interface StartSpanEventOptions extends SpanOptions {
    */
   logStart?: boolean;
   traceFlags?: TraceFlags;
+  simplingRatio?: number;
   data?: {
     spanId?: string;
     traceId?: string;

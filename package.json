@@ -21,7 +21,7 @@
     "fix:prettier": "prettier \"src/**/*.ts\" --write",
     "fix:tslint": "tslint --fix --project .",
     "test": "yarn build && run-s test:*",
-    "test:lint": "tslint --project . && prettier \"src/**/*.ts\" --list-different",
+    "test:lint": "tslint --fix --project . && prettier \"src/**/*.ts\" --write",
     "test:unit": "jest",
     "test:unit-build": "jest -c jest.build.config.js",
     "watch": "run-s clean build:main && run-p \"build:main -- -w\" \"test:unit -- --watch\"",

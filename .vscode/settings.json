@@ -3,8 +3,5 @@
   "prettier.useTabs": false,
   "prettier.tabWidth": 2,
   "editor.formatOnSave": true,
-  "javascript.format.enable": false,
-  "typescript.format.enable": false
-  // "typescript.implementationsCodeLens.enabled": true
-  // "typescript.referencesCodeLens.enabled": true
+  "editor.defaultFormatter": "esbenp.prettier-vscode"
 }

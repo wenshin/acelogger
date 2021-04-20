@@ -45,7 +45,9 @@ function createMockLib(): { ace: Manager; mockExport: jest.Mock<any, any> } {
 
 test('SimpleLogger::startSpan without remote context', done => {
   const { ace, mockExport } = createMockLib();
-  const logger = ace.logger.startSpan('test.span1');
+  const logger = ace.logger.startSpan('test.span1', {
+    logStart: true
+  });
   const span = logger.span;
   expect(span).toBeTruthy();
   expect(span.startTime).toBeTruthy();
@@ -95,6 +97,7 @@ test('SimpleLogger::startSpan with remote context', done => {
   const { ace, mockExport } = createMockLib();
   const startTime = ace.timer.now() - 1000;
   const logger = ace.logger.startSpan('test.span', {
+    logStart: true,
     kind: SpanKind.SERVER,
     parent: {
       spanId: '1.1',
@@ -150,10 +153,10 @@ test('SimpleLogger::startSpan start sub span', () => {
 test('SimpleLogger::startSpan logStart is false', done => {
   const { ace, mockExport } = createMockLib();
   const logger1 = ace.logger.startSpan('test.span1', {
-    logStart: false
+    logStart: true
   });
   logger1.flush(() => {
-    expect(mockExport.mock.calls.length).toBe(0);
+    expect(mockExport.mock.calls.length).toBe(1);
     done();
   });
 });
@@ -176,9 +179,9 @@ test('SimpleLogger::endSpan without event argument', done => {
 
       const evts = mockExport.mock.calls[0][0];
       const span = logger.span;
-      expect(evts.length).toBe(2);
+      expect(evts.length).toBe(1);
       // timing end span
-      expect(evts[1].attributes).toEqual({
+      expect(evts[0].attributes).toEqual({
         app: 'test-app',
         appVersion: '0.0.1',
         logger: 'acelogger',
@@ -188,21 +191,21 @@ test('SimpleLogger::endSpan without event argument', done => {
         tag1: 'tag1',
         tag2: 'tag2'
       });
-      expect(evts[1].data).toEqual({
+      expect(evts[0].data).toEqual({
         spanId: span.context.spanId,
         traceId: span.context.traceId
       });
-      expect(evts[1].name).toBe('test.span.end');
-      expect(evts[1].message).toBe(
+      expect(evts[0].name).toBe('test.span.end');
+      expect(evts[0].message).toBe(
         `test.span end with ${logger.span.endTime - logger.span.startTime}ms`
       );
-      expect(evts[1].level).toBe(LogLevel.Info);
+      expect(evts[0].level).toBe(LogLevel.Info);
       expect(span.startTime).toEqual(span.userStartTime);
-      expect(evts[1].metrics).toEqual({
+      expect(evts[0].metrics).toEqual({
         'test.span.duration': span.endTime - span.startTime
       });
-      expect(evts[1].status).toBe(CanonicalCode.OK);
-      expect(evts[1].type).toBe(EventType.Tracing);
+      expect(evts[0].status).toBe(CanonicalCode.OK);
+      expect(evts[0].type).toBe(EventType.Tracing);
       done();
     } catch (err) {
       done(err);
@@ -223,8 +226,8 @@ test('SimpleLogger::endSpan with event argument', done => {
   });
   ace.flush(() => {
     try {
-      expect(mockExport.mock.calls.length).toBe(2);
-      const endEvent = mockExport.mock.calls[1][0][0];
+      expect(mockExport.mock.calls.length).toBe(1);
+      const endEvent = mockExport.mock.calls[0][0][0];
       expect(endEvent.message).toBe(
         `test.span end with ${logger.span.endTime -
           logger.span.startTime}ms, endSpan message`
@@ -252,8 +255,8 @@ test('SimpleLogger::endSpan with error status', done => {
   });
   ace.flush(() => {
     try {
-      expect(mockExport.mock.calls.length).toBe(2);
-      const infoevts = mockExport.mock.calls[1][0];
+      expect(mockExport.mock.calls.length).toBe(1);
+      const infoevts = mockExport.mock.calls[0][0];
       expect(infoevts.length).toBe(1);
       expect(infoevts[0].status).toBe(CanonicalCode.INTERNAL);
       expect(infoevts[0].level).toBe(LogLevel.Error);
@@ -396,6 +399,7 @@ test('SimpleLogger::storeMetrics', done => {
   ace.logger.storeMetrics({
     status: CanonicalCode.INTERNAL,
     message: 'test-store-message',
+    simplingRatio: 0.3,
     metrics: {
       cpuUsage: 0.1
     }
@@ -409,6 +413,7 @@ test('SimpleLogger::storeMetrics', done => {
         'store {"cpuUsage":0.1}, test-store-message'
       );
       expect(evts[0].level).toBe(LogLevel.Error);
+      expect(evts[0].simplingRatio).toBe(0.3);
       expect(evts[0].metrics).toEqual({
         cpuUsage: 0.1
       });
@@ -432,6 +437,7 @@ test('SimpleLogger::storeMetrics without message', done => {
       expect(evts[0].message).toBe('store {"cpuUsage":0.1}');
       expect(evts[0].status).toBe(CanonicalCode.OK);
       expect(evts[0].level).toBe(LogLevel.Debug);
+      expect(evts[0].simplingRatio).toBe(1);
       done();
     } catch (err) {
       done(err);

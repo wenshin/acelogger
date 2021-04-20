@@ -170,8 +170,8 @@ export default class SimpleLogger implements Logger {
         spanName: span.name
       })
     );
-    const doNotLogStart = opts && opts.logStart === false;
-    if (!doNotLogStart) {
+    const logStart = opts && opts.logStart === true;
+    if (logStart) {
       logger.innerLog({
         data: opts && opts.data,
         level: LogLevel.Info,
@@ -251,6 +251,8 @@ export default class SimpleLogger implements Logger {
     const status = evt.status || CanonicalCode.OK;
     const level = Math.max(getLogLevelByStatus(status), evt.level);
     const time = evt.time || this.manager.timer.now();
+    const simplingRatio =
+      typeof evt.simplingRatio === 'number' ? evt.simplingRatio : 1;
 
     this.manager.addEvent({
       attributes,
@@ -259,6 +261,7 @@ export default class SimpleLogger implements Logger {
       message: evt.message,
       metrics: evt.metrics,
       name: evt.name,
+      simplingRatio,
       stack: evt.stack,
       status,
       time,
