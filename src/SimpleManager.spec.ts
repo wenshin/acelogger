@@ -9,6 +9,11 @@ test('SimpleManager::new', () => {
   expect(ace.timer).toBe(manager.timer);
 });
 
+test('SimpleManager::new with options', () => {
+  const manager = new SimpleManager({ flushDelay: 300 });
+  expect((manager as any).flushDelay).toBe(300);
+});
+
 test('SimpleManager::setTracer', () => {
   const manager = new SimpleManager();
   const oldTracer = manager.tracer;

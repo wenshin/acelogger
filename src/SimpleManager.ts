@@ -31,12 +31,16 @@ export default class SimpleManager implements Manager {
   private bufferCount: number = 0;
   private bufferSize: number = 10;
   private flushTimer: NodeJS.Timeout;
+  private flushDelay = 0;
 
-  constructor() {
+  constructor(options?: { flushDelay?: number }) {
     this.defaultLogger = new SimpleLogger();
     this.defaultLogger.manager = this;
     this.defaultTracer = new SimpleTracer();
     this.defaultTracer.manager = this;
+    if (options && options.flushDelay) {
+      this.flushDelay = options && options.flushDelay;
+    }
   }
 
   public setLogger(logger: Logger | null): void {
@@ -115,7 +119,7 @@ export default class SimpleManager implements Manager {
       if (cb) {
         cb();
       }
-    }, 0);
+    }, this.flushDelay);
   }
 
   get flushing(): boolean {
