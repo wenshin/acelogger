@@ -159,6 +159,10 @@ manager.setExporter(LogLevel.Debug, {
 
 # ChangeLog
 
+#### 2021-04-20 0.9.0
+
+- feat: SimpleManager support customize flush delay time
+
 #### 2021-04-20 0.8.1
 
 - feat: add simplingRatio for event and disable log start event by default
