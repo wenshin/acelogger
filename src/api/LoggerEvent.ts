@@ -24,9 +24,9 @@ export interface LoggerEvent {
   level: LogLevel;
   traceFlags: TraceFlags;
   /**
-   * set simpling ratio to the event
+   * set simpling rate to the event
    */
-  simplingRatio?: number;
+  simplingRate?: number;
   // metric data
   metrics?: {
     [key: string]: string | number;

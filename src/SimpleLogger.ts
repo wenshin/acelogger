@@ -156,8 +156,8 @@ export default class SimpleLogger implements Logger {
   public startSpan(name: string, options?: StartSpanEventOptions): SpanLogger {
     const opts = this.span
       ? Object.assign({}, options, {
-        parent: this.span.context
-      })
+          parent: this.span.context
+        })
       : options;
 
     const span = this.manager.tracer.createSpan(name, opts);
@@ -251,8 +251,8 @@ export default class SimpleLogger implements Logger {
     const status = evt.status || CanonicalCode.OK;
     const level = Math.max(getLogLevelByStatus(status), evt.level);
     const time = evt.time || this.manager.timer.now();
-    const simplingRatio =
-      typeof evt.simplingRatio === 'number' ? evt.simplingRatio : 1;
+    const simplingRate =
+      typeof evt.simplingRate === 'number' ? evt.simplingRate : 1;
 
     this.manager.addEvent({
       attributes,
@@ -261,7 +261,7 @@ export default class SimpleLogger implements Logger {
       message: evt.message,
       metrics: evt.metrics,
       name: evt.name,
-      simplingRatio,
+      simplingRate,
       stack: evt.stack,
       status,
       time,
