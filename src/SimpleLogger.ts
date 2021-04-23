@@ -37,7 +37,7 @@ export default class SimpleLogger implements Logger {
   public manager: Manager;
   public span?: SpanStruct;
   private attributes: LoggerAttributes = {
-    lib: 'acelogger@0.9.1',
+    lib: 'acelogger@0.9.2',
     logger: 'acelogger',
     spanKind: SpanKind.INTERNAL,
     spanName: 'unknown'
@@ -251,8 +251,8 @@ export default class SimpleLogger implements Logger {
     const status = evt.status || CanonicalCode.OK;
     const level = Math.max(getLogLevelByStatus(status), evt.level);
     const time = evt.time || this.manager.timer.now();
-    const simplingRate =
-      typeof evt.simplingRate === 'number' ? evt.simplingRate : 1;
+    const samplingRate =
+      typeof evt.samplingRate === 'number' ? evt.samplingRate : 1;
 
     this.manager.addEvent({
       attributes,
@@ -261,7 +261,7 @@ export default class SimpleLogger implements Logger {
       message: evt.message,
       metrics: evt.metrics,
       name: evt.name,
-      simplingRate,
+      samplingRate,
       stack: evt.stack,
       status,
       time,

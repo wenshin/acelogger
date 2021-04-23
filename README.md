@@ -159,7 +159,7 @@ manager.setExporter(LogLevel.Debug, {
 
 # ChangeLog
 
-#### 2021-04-23 0.9.1
+#### 2021-04-23 0.9.2
 
 - feat: chage samplingRatio to samplingRate
 
@@ -169,7 +169,7 @@ manager.setExporter(LogLevel.Debug, {
 
 #### 2021-04-20 0.8.1
 
-- feat: add simplingRatio for event and disable log start event by default
+- feat: add samplingRatio for event and disable log start event by default
 
 #### 2021-04-19 0.8.0
 

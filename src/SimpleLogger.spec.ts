@@ -230,7 +230,7 @@ test('SimpleLogger::endSpan with event argument', done => {
       const endEvent = mockExport.mock.calls[0][0][0];
       expect(endEvent.message).toBe(
         `test.span end with ${logger.span.endTime -
-          logger.span.startTime}ms, endSpan message`
+        logger.span.startTime}ms, endSpan message`
       );
       expect(endEvent.level).toBe(LogLevel.Error);
       expect(endEvent.traceFlags).toBe(TraceFlags.SAMPLED);
@@ -399,7 +399,7 @@ test('SimpleLogger::storeMetrics', done => {
   ace.logger.storeMetrics({
     status: CanonicalCode.INTERNAL,
     message: 'test-store-message',
-    simplingRate: 0.3,
+    samplingRate: 0.3,
     metrics: {
       cpuUsage: 0.1
     }
@@ -413,7 +413,7 @@ test('SimpleLogger::storeMetrics', done => {
         'store {"cpuUsage":0.1}, test-store-message'
       );
       expect(evts[0].level).toBe(LogLevel.Error);
-      expect(evts[0].simplingRate).toBe(0.3);
+      expect(evts[0].samplingRate).toBe(0.3);
       expect(evts[0].metrics).toEqual({
         cpuUsage: 0.1
       });
@@ -437,7 +437,7 @@ test('SimpleLogger::storeMetrics without message', done => {
       expect(evts[0].message).toBe('store {"cpuUsage":0.1}');
       expect(evts[0].status).toBe(CanonicalCode.OK);
       expect(evts[0].level).toBe(LogLevel.Debug);
-      expect(evts[0].simplingRate).toBe(1);
+      expect(evts[0].samplingRate).toBe(1);
       done();
     } catch (err) {
       done(err);
