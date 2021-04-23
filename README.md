@@ -159,6 +159,10 @@ manager.setExporter(LogLevel.Debug, {
 
 # ChangeLog
 
+#### 2021-04-23 0.9.1
+
+- feat: chage samplingRatio to samplingRate
+
 #### 2021-04-20 0.9.0
 
 - feat: SimpleManager support customize flush delay time
