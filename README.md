@@ -157,6 +157,10 @@ manager.setExporter(LogLevel.Debug, {
 
 # ChangeLog
 
+#### 2021-10-08 0.11.0
+
+- feat: support set flush ready flag
+
 #### 2021-10-08 0.10.0
 
 - feat: remove setBufferSize
