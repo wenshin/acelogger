@@ -230,7 +230,7 @@ test('SimpleLogger::endSpan with event argument', done => {
       const endEvent = mockExport.mock.calls[0][0][0];
       expect(endEvent.message).toBe(
         `test.span end with ${logger.span.endTime -
-        logger.span.startTime}ms, endSpan message`
+          logger.span.startTime}ms, endSpan message`
       );
       expect(endEvent.level).toBe(LogLevel.Error);
       expect(endEvent.traceFlags).toBe(TraceFlags.SAMPLED);
@@ -378,7 +378,7 @@ test('SimpleLogger log with traceFlag', done => {
   });
 });
 
-test('SimpleLogger::setBufferSize set buffer size to 0', () => {
+test('SimpleLogger::setBufferSize set buffer size to 0, from 0.10.0 only for compatible with old versions', () => {
   const { ace, mockExport } = createMockLib();
   ace.setBufferSize(0);
   ace.logger.info('test set buffer size');
@@ -386,7 +386,7 @@ test('SimpleLogger::setBufferSize set buffer size to 0', () => {
   expect(mockExport.mock.calls.length).toBe(0);
 });
 
-test('SimpleLogger buffer is full', () => {
+test('SimpleLogger buffer is full, from 0.10.0 only for compatible with old versions', () => {
   const { ace } = createMockLib();
   ace.setBufferSize(2);
   ace.logger.info('test set buffer size');

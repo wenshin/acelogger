@@ -156,8 +156,8 @@ export default class SimpleLogger implements Logger {
   public startSpan(name: string, options?: StartSpanEventOptions): SpanLogger {
     const opts = this.span
       ? Object.assign({}, options, {
-        parent: this.span.context
-      })
+          parent: this.span.context
+        })
       : options;
 
     const span = this.manager.tracer.createSpan(name, opts);

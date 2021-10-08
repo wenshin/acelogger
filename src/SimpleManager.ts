@@ -23,15 +23,16 @@ enum RegisterKeys {
 
 export default class SimpleManager implements Manager {
   public eventBuffer: Map<LogLevel, LoggerEvent[]> = new Map();
+  // public for test
+  public flushTimer: NodeJS.Timeout;
 
   private defaultLogger: Logger;
   private defaultTracer: Tracer;
   private registries = new Map<string, any>();
   private exporterMap: Map<LogLevel, LoggerEventExporter[]> = new Map();
-  private bufferCount: number = 0;
-  private bufferSize: number = 10;
-  private flushTimer: NodeJS.Timeout;
-  private flushDelay = 0;
+  // 200ms is the minimum interval for human eyes to feel no delay
+  private flushDelay = 200;
+  private flushCallbacks: Array<() => void> = [];
 
   constructor(options?: { flushDelay?: number }) {
     this.defaultLogger = new SimpleLogger();
@@ -73,8 +74,17 @@ export default class SimpleManager implements Manager {
     return this.registries.get(RegisterKeys.Timer) || defaultTimer;
   }
 
-  public setBufferSize(size: number): void {
-    this.bufferSize = size;
+  /**
+   * @deprecate
+   * from 0.10.0 has been replaced by flushDelay with default value 200ms
+   */
+  public setBufferSize(_: number): void {
+    /* tslint:disable:no-console */
+    console.warn('DEPRECATED from 0.10.0');
+  }
+
+  public setFlushDelay(delay: number): void {
+    this.flushDelay = delay;
   }
 
   public setExporter(level: LogLevel, exportor: LoggerEventExporter): this {
@@ -93,16 +103,17 @@ export default class SimpleManager implements Manager {
   public addEvent(evt: LoggerEvent): this {
     const evts = this.eventBuffer.get(evt.level) || [];
     evts.push(evt);
-    this.bufferCount++;
     this.eventBuffer.set(evt.level, evts);
 
-    if (this.bufferCount >= this.bufferSize) {
-      this.flush();
-    }
+    this.flush();
     return this;
   }
 
   public flush(cb?: () => void): void {
+    if (cb) {
+      this.flushCallbacks.push(cb);
+    }
+    // do not use debounce to reduce the cpu consume
     if (this.flushTimer) {
       return;
     }
@@ -114,11 +125,8 @@ export default class SimpleManager implements Manager {
       });
       // 2. reset eventBuffer anyway
       this.eventBuffer = new Map();
-      this.bufferCount = 0;
       this.flushTimer = null;
-      if (cb) {
-        cb();
-      }
+      this.flushCallbacks.forEach(f => f());
     }, this.flushDelay);
   }
 

@@ -42,8 +42,13 @@ test('SimpleManager::setLogger', () => {
 test('SimpleManager::flush latency', done => {
   const manager = new SimpleManager();
   const start = Date.now();
+  manager.setFlushDelay(50);
   manager.flush(() => {
-    expect(Date.now() - start < 50).toBeTruthy();
+    expect(Date.now() - start >= 45).toBeTruthy();
     done();
   });
+
+  const oldTimer = manager.flushTimer;
+  manager.flush(() => {});
+  expect(oldTimer).toEqual(manager.flushTimer);
 });
