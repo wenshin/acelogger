@@ -40,6 +40,7 @@ function createMockLib(): { ace: Manager; mockExport: jest.Mock<any, any> } {
     app: 'test-app',
     appVersion: '0.0.1'
   });
+  ace.setFlushReady();
   return { ace, mockExport };
 }
 

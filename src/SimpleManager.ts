@@ -33,6 +33,7 @@ export default class SimpleManager implements Manager {
   // 200ms is the minimum interval for human eyes to feel no delay
   private flushDelay = 200;
   private flushCallbacks: Array<() => void> = [];
+  private isFlushReady = false;
 
   constructor(options?: { flushDelay?: number }) {
     this.defaultLogger = new SimpleLogger();
@@ -87,6 +88,10 @@ export default class SimpleManager implements Manager {
     this.flushDelay = delay;
   }
 
+  public setFlushReady(): void {
+    this.isFlushReady = true;
+  }
+
   public setExporter(level: LogLevel, exportor: LoggerEventExporter): this {
     Object.keys(LogLevel).forEach(l => {
       const levelValue = LogLevel[l];
@@ -114,7 +119,7 @@ export default class SimpleManager implements Manager {
       this.flushCallbacks.push(cb);
     }
     // do not use debounce to reduce the cpu consume
-    if (this.flushTimer) {
+    if (this.flushTimer || !this.isFlushReady) {
       return;
     }
 
