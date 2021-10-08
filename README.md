@@ -70,8 +70,6 @@ class MetricExporterWeb implements LoggerEventExporter {
 ace.setExporter(LogLevel.Debug, new ConsoleExporterWeb());
 // set event exporter, for metric reportings
 ace.setExporter(LogLevel.Debug, new MetricExporterWeb());
-// export events immediately
-ace.setBufferSize(0);
 
 // log info level message
 ace.logger.info('test info');
@@ -158,6 +156,10 @@ manager.setExporter(LogLevel.Debug, {
 [See Details](./src/api)
 
 # ChangeLog
+
+#### 2021-10-08 0.10.0
+
+- feat: remove setBufferSize
 
 #### 2021-04-23 0.9.2
 
