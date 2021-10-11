@@ -15,7 +15,9 @@ import {
   SpanKind,
   StartSpanEventOptions
 } from './api';
+import { DEFAULT_TRACE_ID, DEFAULT_SPAN_ID } from './SimpleTracer';
 import { getLogLevelByStatus, getMillisecondsTime } from './utils';
+
 
 /**
  * 1. Start event
@@ -223,10 +225,9 @@ export default class SimpleLogger implements Logger {
   ): void {
     let traceFlags = evt.traceFlags || TraceFlags.NONE;
     const data: LoggerEvent['data'] = Object.assign(
-      {},
       {
-        spanId: '0',
-        traceId: '0'
+        spanId: DEFAULT_SPAN_ID,
+        traceId: DEFAULT_TRACE_ID
       },
       evt.data
     );

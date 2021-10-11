@@ -13,6 +13,7 @@ import {
 import { performance } from 'perf_hooks';
 // @ts-ignore
 import pkg from '../package.json';
+import { DEFAULT_TRACE_ID, DEFAULT_SPAN_ID } from './SimpleTracer';
 
 function createMockLib(): { ace: Manager; mockExport: jest.Mock<any, any> } {
   const mockExport = jest.fn();
@@ -88,7 +89,7 @@ test('SimpleLogger::startSpan without remote context', done => {
       `${logger2.span.context.traceId}-2`
     );
     expect(
-      logger2.span.context.traceId !== logger.span.context.traceId
+      logger2.span.context.traceId === logger.span.context.traceId
     ).toBeTruthy();
     done();
   });
@@ -315,8 +316,8 @@ test('SimpleLogger log message whitout span', done => {
         expect(evts[0].level).toBe(i);
         expect(evts[0].traceFlags).toBe(TraceFlags.NONE);
         expect(evts[0].data).toEqual({
-          spanId: '0',
-          traceId: '0',
+          spanId: DEFAULT_SPAN_ID,
+          traceId: DEFAULT_TRACE_ID,
           test: levels[i]
         });
         if (levels[i] === 'error' || levels[i] === 'fatal') {
@@ -350,8 +351,8 @@ test('SimpleLogger log error with string', done => {
         expect(evts[0].message).toBe('test ' + levels[i]);
         expect(evts[0].traceFlags).toBe(TraceFlags.NONE);
         expect(evts[0].data).toEqual({
-          spanId: '0',
-          traceId: '0',
+          spanId: DEFAULT_SPAN_ID,
+          traceId: DEFAULT_TRACE_ID,
           test: levels[i]
         });
         expect(evts[0].stack).toBeFalsy();

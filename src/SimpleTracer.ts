@@ -47,6 +47,9 @@ export function createTraceId(): string {
   );
 }
 
+export const DEFAULT_TRACE_ID = createTraceId();
+export const DEFAULT_SPAN_ID = `${DEFAULT_TRACE_ID}-1`;
+
 export default class SimpleTracer implements Tracer {
   public manager: Manager;
   private data: TracerStruct = {
@@ -59,7 +62,7 @@ export default class SimpleTracer implements Tracer {
 
   public createSpanContext(ctx?: SpanContextConfig): SpanContext {
     const c = Object.assign({}, ctx);
-    const traceId = c.traceId || createTraceId();
+    const traceId = c.traceId || DEFAULT_TRACE_ID;
     return {
       isRemote: c.isRemote,
       spanId: createSpanId(traceId, c.spanId),
