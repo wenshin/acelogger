@@ -157,6 +157,10 @@ manager.setExporter(LogLevel.Debug, {
 
 # ChangeLog
 
+#### 2021-10-11 0.12.0
+
+- feat: enhancement default traceId and spanId
+
 #### 2021-10-08 0.11.0
 
 - feat: support set flush ready flag
