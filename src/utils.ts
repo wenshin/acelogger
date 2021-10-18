@@ -23,3 +23,28 @@ export function getLogLevelByStatus(status: CanonicalCode): LogLevel {
       return LogLevel.Warn;
   }
 }
+
+/**
+ *
+ * @param spanName
+ * @param event
+ * fmp: First Meaningful Paint, the meaningful content paint
+ * lcp: Largest Contentful Paint, the largest area content paint
+ * shown: all elements paint in view area
+ * tti: Time to interactive
+ * @returns
+ */
+export function getSpanEventName(
+  spanName: string,
+  event: 'start' | 'end' | 'fmp' | 'lcp' | 'shown' | 'tti'
+): string {
+  return `${spanName}.${event}`;
+}
+
+export function getLatencyMetric(eventName: string): string {
+  return `${eventName}.latency`;
+}
+
+export function getDurationMetric(spanName: string): string {
+  return `${spanName}.duration`;
+}

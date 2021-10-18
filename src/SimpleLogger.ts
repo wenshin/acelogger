@@ -16,7 +16,7 @@ import {
   StartSpanEventOptions
 } from './api';
 import { DEFAULT_TRACE_ID, DEFAULT_SPAN_ID } from './SimpleTracer';
-import { getLogLevelByStatus, getMillisecondsTime } from './utils';
+import { getDurationMetric, getLatencyMetric, getSpanEventName, getLogLevelByStatus, getMillisecondsTime } from './utils';
 
 
 /**
@@ -173,15 +173,16 @@ export default class SimpleLogger implements Logger {
       })
     );
     const logStart = opts && opts.logStart === true;
+    const eventName = getSpanEventName(span.name, 'start');
     if (logStart) {
       logger.innerLog({
         data: opts && opts.data,
         level: LogLevel.Info,
-        message: `${span.name}.start`,
+        message: eventName,
         metrics: {
-          [`${span.name}.start.latency`]: span.startTime - span.userStartTime
+          [getLatencyMetric(eventName)]: span.startTime - span.userStartTime
         },
-        name: `${span.name}.start`,
+        name: eventName,
         type: EventType.Tracing
       });
     }
@@ -195,7 +196,7 @@ export default class SimpleLogger implements Logger {
     }
 
     const e = Object.assign({}, evt, {
-      name: `${this.span.name}.end`,
+      name: getSpanEventName(this.span.name, 'end'),
       type: EventType.Tracing
     });
 
@@ -206,7 +207,7 @@ export default class SimpleLogger implements Logger {
     e.metrics = Object.assign(
       {},
       {
-        [`${this.span.name}.duration`]: duration
+        [getDurationMetric(this.span.name)]: duration
       },
       e.metrics
     );
