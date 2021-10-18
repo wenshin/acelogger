@@ -157,6 +157,10 @@ manager.setExporter(LogLevel.Debug, {
 
 # ChangeLog
 
+#### 2021-10-18 0.12.1
+
+- refactor: add some util for event name and metric name
+
 #### 2021-10-11 0.12.0
 
 - feat: enhancement default traceId and spanId

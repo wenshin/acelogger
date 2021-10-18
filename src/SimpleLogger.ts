@@ -16,8 +16,13 @@ import {
   StartSpanEventOptions
 } from './api';
 import { DEFAULT_TRACE_ID, DEFAULT_SPAN_ID } from './SimpleTracer';
-import { getDurationMetric, getLatencyMetric, getSpanEventName, getLogLevelByStatus, getMillisecondsTime } from './utils';
-
+import {
+  getDurationMetric,
+  getLatencyMetric,
+  getSpanEventName,
+  getLogLevelByStatus,
+  getMillisecondsTime
+} from './utils';
 
 /**
  * 1. Start event
@@ -39,7 +44,7 @@ export default class SimpleLogger implements Logger {
   public manager: Manager;
   public span?: SpanStruct;
   private attributes: LoggerAttributes = {
-    lib: 'acelogger@0.12.0',
+    lib: 'acelogger@0.12.1',
     logger: 'acelogger',
     spanKind: SpanKind.INTERNAL,
     spanName: 'unknown'
