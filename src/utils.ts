@@ -10,6 +10,30 @@ export function getMillisecondsTime(time: TimeInput): number {
     : (time as number);
 }
 
+export function getStatusFromHTTPStatus(status: number) {
+  if (status < 300) {
+    return CanonicalCode.OK;
+  }
+  switch (status) {
+    case 401:
+      return CanonicalCode.UNAUTHENTICATED;
+    case 403:
+      return CanonicalCode.PERMISSION_DENIED;
+    case 404:
+      return CanonicalCode.NOT_FOUND;
+    case 500:
+      return CanonicalCode.INTERNAL;
+    case 501:
+      return CanonicalCode.UNIMPLEMENTED;
+    case 503:
+      return CanonicalCode.UNAVAILABLE;
+    case 504:
+      return CanonicalCode.DEADLINE_EXCEEDED;
+    default:
+      return status;
+  }
+}
+
 export function getLogLevelByStatus(status: CanonicalCode): LogLevel {
   switch (status) {
     case CanonicalCode.OK:
