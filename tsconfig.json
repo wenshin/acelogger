@@ -4,7 +4,8 @@
     "outDir": "./lib",
     "moduleResolution": "node",
     "module": "commonjs",
-    "resolveJsonModule": true,
+    // 测试代码中有 import json 的需求，如果这个改为 true，会导致 rootDir 必须是 project 根目录，最后导致 build 的路径为 lib/src
+    "resolveJsonModule": false,
     "declaration": true,
     "inlineSourceMap": true,
     "esModuleInterop": true /* Enables emit interoperability between CommonJS and ES Modules via creation of namespace objects for all imports. Implies 'allowSyntheticDefaultImports'. */,

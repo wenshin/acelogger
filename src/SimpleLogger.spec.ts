@@ -11,6 +11,9 @@ import {
   Manager,
 } from './api';
 import { performance } from 'perf_hooks';
+// 本来可以设置 resolveJsonModule 为 true 的，但是这样会导致最终构建的时候，输出目录会包含 src 目录
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 import pkg from '../package.json';
 import { DEFAULT_TRACE_ID, DEFAULT_SPAN_ID } from './SimpleTracer';
 
