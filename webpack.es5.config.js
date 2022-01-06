@@ -1,5 +1,5 @@
-const path = require('path');
-const babelConfig = require('./babel.config');
+const path = require('path')
+const babelConfig = require('./babel.config')
 // const BundleAnalyzerPlugin = require('webpack-bundle-analyzer')
 //   .BundleAnalyzerPlugin;
 
@@ -27,4 +27,4 @@ module.exports = {
     extensions: ['.js', '.json', '.ts']
   }
   // plugins: [new BundleAnalyzerPlugin()]
-};
+}

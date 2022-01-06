@@ -1,2 +1,8 @@
 # package.json is formatted by package managers, so we ignore it here
 package.json
+lib
+demo
+dist
+es
+node_modules
+coverage

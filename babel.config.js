@@ -7,4 +7,4 @@ module.exports = {
   plugins: [
     ['transform-class-properties', { spec: true }]
   ]
-};
+}

@@ -1,5 +1,5 @@
-const path = require('path');
-const babelConfig = require('../babel.config');
+const path = require('path')
+const babelConfig = require('../babel.config')
 
 module.exports = {
   mode: 'development',
@@ -23,4 +23,4 @@ module.exports = {
   resolve: {
     extensions: ['.wasm', '.mjs', '.js', '.json', '.ts']
   }
-};
+}
