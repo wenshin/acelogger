@@ -6,34 +6,51 @@ import {
   ExportResult,
   LogLevel,
   LoggerEvent,
-  LoggerEventExporter
+  LoggerEventExporter,
+  LoggerAttributes,
+  ManagerAttributes,
+  InnerManagerAttributes,
 } from './api';
 import SimpleLogger from './SimpleLogger';
 import SimpleTracer from './SimpleTracer';
 
 const defaultTimer = {
-  now: () => Date.now()
+  now: () => Date.now(),
 };
 
 enum RegisterKeys {
   Logger = 'logger',
   Tracer = 'tracer',
-  Timer = 'timer'
+  Timer = 'timer',
+}
+
+interface CacheEvents {
+  attributes: LoggerAttributes;
+  events: LoggerEvent[];
 }
 
 export default class SimpleManager implements Manager {
-  public eventBuffer: Map<LogLevel, LoggerEvent[]> = new Map();
+  public eventBuffer = new Map<LogLevel, Map<string, CacheEvents>>();
   // public for test
   public flushTimer: NodeJS.Timeout;
 
   private defaultLogger: Logger;
   private defaultTracer: Tracer;
-  private registries = new Map<string, any>();
+  private registries = new Map<string, Logger | Tracer | Timer | null>();
   private exporterMap: Map<LogLevel, LoggerEventExporter[]> = new Map();
   // 200ms is the minimum interval for human eyes to feel no delay
   private flushDelay = 200;
   private flushCallbacks: Array<() => void> = [];
   private isFlushReady = false;
+  private _attributes: InnerManagerAttributes = {
+    app: 'unknown',
+    appVersion: 'unknown',
+    lib: 'acelogger',
+    libVersion: '0.12.1',
+    os: 'unknown',
+    osVersion: 'unknown',
+    env: 'production',
+  };
 
   constructor(options?: { flushDelay?: number }) {
     this.defaultLogger = new SimpleLogger();
@@ -45,6 +62,14 @@ export default class SimpleManager implements Manager {
     }
   }
 
+  public setAttributes(attrs: ManagerAttributes): void {
+    Object.assign(this._attributes, attrs);
+  }
+
+  get attributes() {
+    return this._attributes;
+  }
+
   public setLogger(logger: Logger | null): void {
     this.registries.set('logger', logger);
     if (logger) {
@@ -53,7 +78,9 @@ export default class SimpleManager implements Manager {
   }
 
   get logger(): Logger {
-    return this.registries.get(RegisterKeys.Logger) || this.defaultLogger;
+    return (
+      (this.registries.get(RegisterKeys.Logger) as Logger) || this.defaultLogger
+    );
   }
 
   public setTracer(tracer: Tracer | null): void {
@@ -64,7 +91,9 @@ export default class SimpleManager implements Manager {
   }
 
   get tracer(): Tracer {
-    return this.registries.get(RegisterKeys.Tracer) || this.defaultTracer;
+    return (
+      (this.registries.get(RegisterKeys.Tracer) as Tracer) || this.defaultTracer
+    );
   }
 
   public setTimer(timer: Timer | null): void {
@@ -72,15 +101,15 @@ export default class SimpleManager implements Manager {
   }
 
   get timer(): Timer {
-    return this.registries.get(RegisterKeys.Timer) || defaultTimer;
+    return (this.registries.get(RegisterKeys.Timer) as Timer) || defaultTimer;
   }
 
   /**
    * @deprecate
    * from 0.10.0 has been replaced by flushDelay with default value 200ms
    */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public setBufferSize(_: number): void {
-    /* tslint:disable:no-console */
     console.warn('DEPRECATED from 0.10.0');
   }
 
@@ -93,7 +122,7 @@ export default class SimpleManager implements Manager {
   }
 
   public setExporter(level: LogLevel, exportor: LoggerEventExporter): this {
-    Object.keys(LogLevel).forEach(l => {
+    Object.keys(LogLevel).forEach((l) => {
       const levelValue = LogLevel[l];
       // set LogLevel.Info exporter, will alse set all levels which greater than LogLevel.Info;
       if (typeof levelValue === 'number' && levelValue >= level) {
@@ -105,10 +134,21 @@ export default class SimpleManager implements Manager {
     return this;
   }
 
-  public addEvent(evt: LoggerEvent): this {
-    const evts = this.eventBuffer.get(evt.level) || [];
-    evts.push(evt);
-    this.eventBuffer.set(evt.level, evts);
+  public addEvent(
+    spanId: string,
+    attrs: LoggerAttributes,
+    event: LoggerEvent
+  ): this {
+    const evts =
+      this.eventBuffer.get(event.level) || new Map<string, CacheEvents>();
+    const evtsBySpan = evts.get(spanId) || {
+      attributes: attrs,
+      events: [],
+    };
+    evtsBySpan.attributes = attrs;
+    evtsBySpan.events.push(event);
+    evts.set(spanId, evtsBySpan);
+    this.eventBuffer.set(event.level, evts);
 
     this.flush();
     return this;
@@ -125,13 +165,13 @@ export default class SimpleManager implements Manager {
 
     this.flushTimer = setTimeout(() => {
       // 1. if exporters exist, export all events
-      this.eventBuffer.forEach((evts, key) => {
-        this.export(key, evts);
+      this.eventBuffer.forEach((evtsBySpan, level) => {
+        this.export(level, evtsBySpan);
       });
       // 2. reset eventBuffer anyway
       this.eventBuffer = new Map();
       this.flushTimer = null;
-      this.flushCallbacks.forEach(f => f());
+      this.flushCallbacks.forEach((f) => f());
     }, this.flushDelay);
   }
 
@@ -139,22 +179,25 @@ export default class SimpleManager implements Manager {
     return !!this.flushTimer;
   }
 
-  private export(level: LogLevel, evts: LoggerEvent[]): void {
+  private export(level: LogLevel, evts: Map<string, CacheEvents>): void {
     try {
       const exporters = this.exporterMap.get(level);
       if (exporters) {
-        exporters.forEach(exporter => {
-          exporter.export(evts, result => {
-            if (result !== ExportResult.SUCCESS) {
-              // TODO: report error to some exporter
-              /* tslint:disable no-console */
-              console.error(
-                `Failed export event with ${
-                  result === ExportResult.FAILED_NOT_RETRYABLE ? 'no' : ''
-                } retry`
-              );
+        exporters.forEach((exporter) => {
+          exporter.export(
+            { attributes: this.attributes, events: Array.from(evts.values()) },
+            (result) => {
+              if (result !== ExportResult.SUCCESS) {
+                // TODO: report error to some exporter
+                /* tslint:disable no-console */
+                console.error(
+                  `Failed export event with ${
+                    result === ExportResult.FAILED_NOT_RETRYABLE ? 'no' : ''
+                  } retry`
+                );
+              }
             }
-          });
+          );
         });
       }
     } catch (err) {

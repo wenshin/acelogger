@@ -2,19 +2,19 @@ import {
   CanonicalCode,
   Attributes,
   TimeInput,
-  SpanKind,
-  TraceFlags
+  TraceFlags,
 } from './opentelemetry';
 import { LogLevel, EventType } from './consts';
 
-export interface LoggerAttributes extends Attributes {
-  // logger name
-  logger: string;
-  // logger lib name and version, like acelogger@0.0.2
-  lib: string;
-  // tracer attributes
-  spanName: string;
-  spanKind: SpanKind;
+/**
+ * inspired by sentry data
+ */
+export interface ErrorStackFrame {
+  lineno: number;
+  colno: number;
+  filename: string;
+  function: string;
+  in_app?: boolean;
 }
 
 export interface LoggerEvent {
@@ -23,6 +23,8 @@ export interface LoggerEvent {
   type: EventType;
   level: LogLevel;
   traceFlags: TraceFlags;
+  traceId: string;
+  spanId: string;
   /**
    * set sampling rate to the event
    */
@@ -32,19 +34,17 @@ export interface LoggerEvent {
     [key: string]: string | number;
   };
   // tags for event, always used to filter the event
-  attributes: LoggerAttributes;
+  attributes: Attributes;
   //  any object data
   data: {
-    spanId: string;
-    traceId: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   // error status code
   status: CanonicalCode;
   // error message for event
   message: string;
   // error stack, only exist when level is EventLevel.Error
-  stack?: string;
+  stack?: ErrorStackFrame[];
   // event trigger times
   time: TimeInput;
 }

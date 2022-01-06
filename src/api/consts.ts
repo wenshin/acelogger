@@ -3,7 +3,7 @@ export enum EventType {
   Event = 'event',
   Log = 'log',
   Metric = 'metric',
-  Tracing = 'tracing'
+  Tracing = 'tracing',
 }
 
 export enum LogLevel {
@@ -16,5 +16,5 @@ export enum LogLevel {
   // app have error and not crashed
   Error,
   // app crashed
-  Fatal
+  Fatal,
 }

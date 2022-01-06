@@ -1,13 +1,18 @@
 import { ExportResult } from './ExportResult';
-import { LoggerEvent } from './LoggerEvent';
+import { ManagerAttributes, CacheEvents } from './Manager';
+
+export interface ExporterEvents {
+  attributes: ManagerAttributes;
+  events: CacheEvents[];
+}
 
 export interface LoggerEventExporter {
   /**
    * @param events the list of sampled events or spans to be exported.
    */
   export(
-    events: LoggerEvent[],
-    resultCallback: (result: ExportResult) => void
+    events: ExporterEvents,
+    resultCallback?: (result: ExportResult) => void
   ): void;
 
   /** Stops the exporter. */

@@ -2,14 +2,20 @@ import {
   LoggerEventExporter,
   LoggerEvent,
   ExportResult,
-  LogLevel
+  LogLevel,
+  ExporterEvents,
+  LoggerAttributes,
 } from '../api';
 import { adaptToJSConsole, formatSection, LogLevelTitleMap } from './console';
 
-export function adaptToNodeConsole(evt: LoggerEvent): void {
+export function adaptToNodeConsole(
+  attrs: LoggerAttributes,
+  evt: LoggerEvent
+): void {
   const debugConfig = (process.env.DEBUG || '').split(',');
   const isAllowDebug =
-    debugConfig.includes(evt.attributes.spanName) || debugConfig.includes('*');
+    debugConfig.includes(attrs.logger || attrs.spanName) ||
+    debugConfig.includes('*');
   if (isAllowDebug || evt.level >= LogLevel.Warn) {
     adaptToJSConsole(evt, formatNodeConsole);
   }
@@ -19,23 +25,25 @@ export function adaptToNodeConsole(evt: LoggerEvent): void {
  * format evt to be a colorful output in node console
  * @param evt
  */
-export function formatNodeConsole(evt: LoggerEvent): any[] {
+export function formatNodeConsole(evt: LoggerEvent): unknown[] {
   const statusColor = evt.level < LogLevel.Warn ? '32' : '31';
   return [
     `\x1b[${statusColor}m${LogLevelTitleMap[evt.level]}\x1b[0m`,
     formatSection(evt),
-    `"${evt.message || 'no message'}"`,
-    evt
+    `"${evt.message}"`,
+    evt,
   ];
 }
 
 export default class ConsoleExporterNode implements LoggerEventExporter {
-  private stoped: boolean = false;
-  public export(evts: LoggerEvent[], cb: (stats: ExportResult) => void): void {
+  private stoped = false;
+  public export(evts: ExporterEvents, cb: (stats: ExportResult) => void): void {
     if (this.stoped) {
       return;
     }
-    evts.forEach(adaptToNodeConsole);
+    evts.events.forEach(({ attributes, events }) => {
+      events.forEach((evt) => adaptToNodeConsole(attributes, evt));
+    });
     if (cb) {
       cb(ExportResult.SUCCESS);
     }

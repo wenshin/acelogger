@@ -1,4 +1,4 @@
-import { TimeInput, CanonicalCode, LogLevel } from './api';
+import { TimeInput, CanonicalCode, LogLevel, ErrorStackFrame } from './api';
 
 export function isTimeInputHrTime(time: TimeInput): boolean {
   return Array.isArray(time) && time.length === 2;
@@ -71,4 +71,27 @@ export function getLatencyMetric(eventName: string): string {
 
 export function getDurationMetric(spanName: string): string {
   return `${spanName}.duration`;
+}
+
+export function stackToFrame(stack: string): ErrorStackFrame[] {
+  return stack
+    .split('\n')
+    .slice(1)
+    .map((line) => {
+      const elems = line.trim().split(/\s+/);
+      const func = elems[1] || 'unknown';
+      const file = elems[2];
+      const fileRE = /\(?(.+?):(\d+):?(\d+)?\)?$/;
+      let [, filename, lineno, colno] = func.match(fileRE) || [];
+      if (!filename && file) {
+        [, filename, lineno, colno] = file.match(fileRE) || [];
+      }
+      return {
+        lineno: Number(lineno) || 0,
+        colno: Number(colno) || 0,
+        filename,
+        function: func,
+        in_app: true,
+      };
+    });
 }

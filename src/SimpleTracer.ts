@@ -7,7 +7,7 @@ import {
   TraceFlags,
   SpanKind,
   Manager,
-  SpanStruct
+  SpanStruct,
 } from './api';
 import { getMillisecondsTime } from './utils';
 
@@ -18,7 +18,7 @@ type SpanContextConfig = {
 } & SpanContext;
 
 const spanCountMap = {
-  $rootSpan: 0
+  $rootSpan: 0,
 };
 
 function createSpanId(traceId: string, parentSpanId?: string): string {
@@ -38,12 +38,8 @@ function createSpanId(traceId: string, parentSpanId?: string): string {
 
 export function createTraceId(): string {
   return (
-    Math.random()
-      .toString(32)
-      .substring(2, 8) +
-    Math.random()
-      .toString(32)
-      .substring(2, 8)
+    Math.random().toString(32).substring(2, 8) +
+    Math.random().toString(32).substring(2, 8)
   );
 }
 
@@ -53,7 +49,7 @@ export const DEFAULT_SPAN_ID = `${DEFAULT_TRACE_ID}-1`;
 export default class SimpleTracer implements Tracer {
   public manager: Manager;
   private data: TracerStruct = {
-    startTime: Date.now()
+    startTime: Date.now(),
   };
 
   public toJSON(): TracerStruct {
@@ -68,7 +64,7 @@ export default class SimpleTracer implements Tracer {
       spanId: createSpanId(traceId, c.spanId),
       traceFlags: c.traceFlags || TraceFlags.NONE,
       traceId,
-      traceState: c.traceState
+      traceState: c.traceState,
     };
   }
 
@@ -84,7 +80,7 @@ export default class SimpleTracer implements Tracer {
       name,
       parentContext: opt.parent,
       startTime: now,
-      userStartTime
+      userStartTime,
     };
   }
 

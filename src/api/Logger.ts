@@ -1,14 +1,20 @@
-import { LoggerAttributes } from './LoggerEvent';
 import { SpanStruct } from './Span';
 import { Manager } from './Manager';
 import { SpanOptions } from './Tracer';
 import {
+  SpanKind,
   CanonicalCode,
   TraceFlags,
   TimeInput,
-  Attributes
+  Attributes,
 } from './opentelemetry';
 import { LogLevel } from './consts';
+
+export interface LoggerAttributes extends Attributes {
+  logger?: string;
+  spanName: string;
+  spanKind: SpanKind;
+}
 
 export interface LoggerEventParams {
   level?: LogLevel;
@@ -24,7 +30,7 @@ export interface LoggerEventParams {
   data?: {
     spanId?: string;
     traceId?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   // error status code
   status?: CanonicalCode;
@@ -46,7 +52,7 @@ export interface StartSpanEventOptions extends SpanOptions {
   data?: {
     spanId?: string;
     traceId?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -121,6 +127,13 @@ export interface Logger {
    *   }
    * })
    * ```
+   * metric type
+   * 1. number value
+   * 2. timing
+   *
+   * metric analysis
+   * 1. percentage analysis
+   * 2. pct/max/min/sum
    */
   storeMetrics(evt: MetricsParams): void;
 

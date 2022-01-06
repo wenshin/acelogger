@@ -1,6 +1,6 @@
+import { stackToFrame } from '.';
 import {
   Logger,
-  LoggerEvent,
   LogLevel,
   EventType,
   SpanLogger,
@@ -13,7 +13,7 @@ import {
   LoggerEventParams,
   TraceFlags,
   SpanKind,
-  StartSpanEventOptions
+  StartSpanEventOptions,
 } from './api';
 import { DEFAULT_TRACE_ID, DEFAULT_SPAN_ID } from './SimpleTracer';
 import {
@@ -21,7 +21,7 @@ import {
   getLatencyMetric,
   getSpanEventName,
   getLogLevelByStatus,
-  getMillisecondsTime
+  getMillisecondsTime,
 } from './utils';
 
 /**
@@ -44,13 +44,12 @@ export default class SimpleLogger implements Logger {
   public manager: Manager;
   public span?: SpanStruct;
   private attributes: LoggerAttributes = {
-    lib: 'acelogger@0.12.1',
-    logger: 'acelogger',
+    logger: 'unknown',
     spanKind: SpanKind.INTERNAL,
-    spanName: 'unknown'
+    spanName: 'unknown',
   };
 
-  public setAttributes(attrs: LoggerAttributes): void {
+  public setAttributes(attrs: Partial<LoggerAttributes>): void {
     Object.assign(this.attributes, attrs);
   }
 
@@ -64,7 +63,7 @@ export default class SimpleLogger implements Logger {
         level: LogLevel.Debug,
         message,
         name: 'log.debug',
-        type: EventType.Log
+        type: EventType.Log,
       })
     );
   }
@@ -75,7 +74,7 @@ export default class SimpleLogger implements Logger {
         level: LogLevel.Info,
         message,
         name: 'log.info',
-        type: EventType.Log
+        type: EventType.Log,
       })
     );
   }
@@ -86,7 +85,7 @@ export default class SimpleLogger implements Logger {
         level: LogLevel.Warn,
         message,
         name: 'log.warn',
-        type: EventType.Log
+        type: EventType.Log,
       })
     );
   }
@@ -106,7 +105,7 @@ export default class SimpleLogger implements Logger {
         message,
         name: 'log.error',
         stack,
-        type: EventType.Log
+        type: EventType.Log,
       })
     );
   }
@@ -126,7 +125,7 @@ export default class SimpleLogger implements Logger {
         message,
         name: 'log.fatal',
         stack,
-        type: EventType.Log
+        type: EventType.Log,
       })
     );
   }
@@ -138,7 +137,7 @@ export default class SimpleLogger implements Logger {
         level: evt.level || LogLevel.Debug,
         message: `store ${JSON.stringify(evt.metrics)}${msg}`,
         name: 'metric.store',
-        type: EventType.Metric
+        type: EventType.Metric,
       })
     );
   }
@@ -153,7 +152,7 @@ export default class SimpleLogger implements Logger {
       level: LogLevel.Info,
       message: (evt && evt.message) || `log event: ${name}`,
       name,
-      type: EventType.Event
+      type: EventType.Event,
     });
     this.innerLog(e);
   }
@@ -163,7 +162,7 @@ export default class SimpleLogger implements Logger {
   public startSpan(name: string, options?: StartSpanEventOptions): SpanLogger {
     const opts = this.span
       ? Object.assign({}, options, {
-          parent: this.span.context
+          parent: this.span.context,
         })
       : options;
 
@@ -174,7 +173,7 @@ export default class SimpleLogger implements Logger {
     logger.setAttributes(
       Object.assign({}, this.attributes, span.attributes, {
         spanKind: span.kind,
-        spanName: span.name
+        spanName: span.name,
       })
     );
     const logStart = opts && opts.logStart === true;
@@ -183,12 +182,11 @@ export default class SimpleLogger implements Logger {
       logger.innerLog({
         data: opts && opts.data,
         level: LogLevel.Info,
-        message: eventName,
         metrics: {
-          [getLatencyMetric(eventName)]: span.startTime - span.userStartTime
+          [getLatencyMetric(eventName)]: span.startTime - span.userStartTime,
         },
         name: eventName,
-        type: EventType.Tracing
+        type: EventType.Tracing,
       });
     }
     return logger as SpanLogger;
@@ -202,7 +200,7 @@ export default class SimpleLogger implements Logger {
 
     const e = Object.assign({}, evt, {
       name: getSpanEventName(this.span.name, 'end'),
-      type: EventType.Tracing
+      type: EventType.Tracing,
     });
 
     e.level = e.level || LogLevel.Info;
@@ -212,7 +210,7 @@ export default class SimpleLogger implements Logger {
     e.metrics = Object.assign(
       {},
       {
-        [getDurationMetric(this.span.name)]: duration
+        [getDurationMetric(this.span.name)]: duration,
       },
       e.metrics
     );
@@ -230,29 +228,18 @@ export default class SimpleLogger implements Logger {
     evt: LoggerEventParams & { name: string; type: EventType }
   ): void {
     let traceFlags = evt.traceFlags || TraceFlags.NONE;
-    const data: LoggerEvent['data'] = Object.assign(
-      {
-        spanId: DEFAULT_SPAN_ID,
-        traceId: DEFAULT_TRACE_ID
-      },
-      evt.data
-    );
-    const attributes: LoggerEvent['attributes'] = Object.assign(
-      {},
-      this.attributes,
-      evt.attributes
-    );
+    const tracing = {
+      spanId: DEFAULT_SPAN_ID,
+      traceId: DEFAULT_TRACE_ID,
+    };
 
     if (this.span) {
       if (evt.traceFlags === undefined || evt.traceFlags === null) {
         traceFlags = this.span.context.traceFlags;
       }
 
-      data.spanId = this.span.context.spanId;
-      data.traceId = this.span.context.traceId;
-
-      attributes.spanName = this.span.name;
-      attributes.spanKind = this.span.kind;
+      tracing.spanId = this.span.context.spanId;
+      tracing.traceId = this.span.context.traceId;
     }
 
     const status = evt.status || CanonicalCode.OK;
@@ -261,19 +248,20 @@ export default class SimpleLogger implements Logger {
     const samplingRate =
       typeof evt.samplingRate === 'number' ? evt.samplingRate : 1;
 
-    this.manager.addEvent({
-      attributes,
-      data,
+    this.manager.addEvent(tracing.spanId, this.attributes, {
+      ...tracing,
+      attributes: evt.attributes,
+      data: evt.data,
       level,
       message: evt.message,
       metrics: evt.metrics,
       name: evt.name,
       samplingRate,
-      stack: evt.stack,
+      stack: evt.stack ? stackToFrame(evt.stack) : undefined,
       status,
       time,
       traceFlags,
-      type: evt.type
+      type: evt.type,
     });
   }
 }

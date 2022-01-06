@@ -1,6 +1,4 @@
 import ace, { SimpleTracer } from '.';
-// @ts-ignore
-import pkg from '../package.json';
 
 test('SimpleTracer::new', () => {
   const tracer = new SimpleTracer();

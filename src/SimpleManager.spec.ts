@@ -11,7 +11,7 @@ test('SimpleManager::new', () => {
 
 test('SimpleManager::new with options', () => {
   const manager = new SimpleManager({ flushDelay: 300 });
-  expect((manager as any).flushDelay).toBe(300);
+  expect((manager as unknown as { flushDelay: number }).flushDelay).toBe(300);
 });
 
 test('SimpleManager::setTracer', () => {
@@ -27,7 +27,7 @@ test('SimpleManager::setTimer', () => {
   manager.setTimer({
     now(): number {
       return Date.now();
-    }
+    },
   });
   expect(oldTimer === manager.timer).toBeFalsy();
 });
@@ -39,7 +39,7 @@ test('SimpleManager::setLogger', () => {
   expect(oldLogger === manager.logger).toBeFalsy();
 });
 
-test('SimpleManager::flush latency', done => {
+test('SimpleManager::flush latency', (done) => {
   const manager = new SimpleManager();
   const start = Date.now();
   manager.setFlushReady();
@@ -50,12 +50,14 @@ test('SimpleManager::flush latency', done => {
   });
 
   const oldTimer = manager.flushTimer;
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   manager.flush(() => {});
   expect(oldTimer).toEqual(manager.flushTimer);
 });
 
-test('SimpleManager::setFlushReady ready', done => {
+test('SimpleManager::setFlushReady ready', (done) => {
   const manager = new SimpleManager();
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   manager.flush(() => {});
   expect(manager.flushTimer).toBeFalsy();
   manager.setFlushReady();

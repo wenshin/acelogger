@@ -1,26 +1,28 @@
 import { SimpleManager } from '.';
 import {
   LogLevel,
-  LoggerEvent,
+  ExporterEvents,
   LoggerEventExporter,
   EventType,
   TraceFlags,
   SpanKind,
   CanonicalCode,
   ExportResult,
-  Manager
+  Manager,
 } from './api';
 import { performance } from 'perf_hooks';
-// @ts-ignore
 import pkg from '../package.json';
 import { DEFAULT_TRACE_ID, DEFAULT_SPAN_ID } from './SimpleTracer';
 
-function createMockLib(): { ace: Manager; mockExport: jest.Mock<any, any> } {
+function createMockLib(): {
+  ace: Manager;
+  mockExport: jest.Mock<undefined, ExporterEvents[]>;
+} {
   const mockExport = jest.fn();
   const ace = new SimpleManager();
   class Exporter implements LoggerEventExporter {
     public export(
-      evts: LoggerEvent[],
+      evts: ExporterEvents,
       cb: (result: ExportResult) => void
     ): void {
       mockExport(evts, cb);
@@ -35,20 +37,30 @@ function createMockLib(): { ace: Manager; mockExport: jest.Mock<any, any> } {
   ace.setTimer({
     now(): number {
       return performance.timeOrigin + performance.now();
-    }
+    },
   });
-  ace.logger.setAttributes({
+  ace.setAttributes({
     app: 'test-app',
-    appVersion: '0.0.1'
+    appVersion: '0.0.1',
+    os: 'mac',
+    osVersion: '1.0',
+    env: 'test',
   });
   ace.setFlushReady();
   return { ace, mockExport };
 }
 
-test('SimpleLogger::startSpan without remote context', done => {
+function getEvents(args: ExporterEvents[]) {
+  const exEvts = args[0];
+  const loggerEvts = exEvts.events[0];
+  const evt = loggerEvts.events[0];
+  return { exEvts, loggerEvts, evt };
+}
+
+test('SimpleLogger::startSpan without remote context', (done) => {
   const { ace, mockExport } = createMockLib();
   const logger = ace.logger.startSpan('test.span1', {
-    logStart: true
+    logStart: true,
   });
   const span = logger.span;
   expect(span).toBeTruthy();
@@ -62,27 +74,32 @@ test('SimpleLogger::startSpan without remote context', done => {
   logger.flush(() => {
     expect(mockExport.mock.calls.length).toBe(1);
 
-    const args = mockExport.mock.calls[0];
-    expect(args[0].length).toBe(1);
-    expect(args[0][0].attributes).toEqual({
+    const { exEvts, loggerEvts, evt } = getEvents(mockExport.mock.calls[0]);
+    expect(exEvts.events.length).toBe(1);
+    expect(exEvts.attributes).toEqual({
       app: 'test-app',
       appVersion: '0.0.1',
-      logger: 'acelogger',
-      lib: `${pkg.name}@${pkg.version}`,
+      lib: pkg.name,
+      libVersion: pkg.version,
+      env: 'test',
+      os: 'mac',
+      osVersion: '1.0',
+    });
+    expect(loggerEvts.attributes).toEqual({
+      logger: 'unknown',
       spanKind: SpanKind.INTERNAL,
-      spanName: span.name
+      spanName: span.name,
     });
-    expect(args[0][0].data).toEqual({
-      spanId: span.context.spanId,
-      traceId: span.context.traceId
-    });
-    expect(args[0][0].name).toBe('test.span1.start');
-    expect(args[0][0].message).toBe('test.span1.start');
-    expect(args[0][0].level).toBe(LogLevel.Info);
-    expect(args[0][0].metrics).toEqual({ 'test.span1.start.latency': 0 });
-    expect(args[0][0].traceFlags).toBe(TraceFlags.NONE);
-    expect(args[0][0].status).toBe(CanonicalCode.OK);
-    expect(args[0][0].type).toBe(EventType.Tracing);
+    expect(loggerEvts.events.length).toBe(1);
+    expect(evt.spanId).toEqual(span.context.spanId);
+    expect(evt.traceId).toEqual(span.context.traceId);
+    expect(evt.name).toBe('test.span1.start');
+    expect(evt.message).toBe(undefined);
+    expect(evt.level).toBe(LogLevel.Info);
+    expect(evt.metrics).toEqual({ 'test.span1.start.latency': 0 });
+    expect(evt.traceFlags).toBe(TraceFlags.NONE);
+    expect(evt.status).toBe(CanonicalCode.OK);
+    expect(evt.type).toBe(EventType.Tracing);
 
     const logger2 = ace.logger.startSpan('test.span2');
     expect(logger2.span.context.spanId).toBe(
@@ -95,7 +112,7 @@ test('SimpleLogger::startSpan without remote context', done => {
   });
 });
 
-test('SimpleLogger::startSpan with remote context', done => {
+test('SimpleLogger::startSpan with remote context', (done) => {
   const { ace, mockExport } = createMockLib();
   const startTime = ace.timer.now() - 1000;
   const logger = ace.logger.startSpan('test.span', {
@@ -104,10 +121,10 @@ test('SimpleLogger::startSpan with remote context', done => {
     parent: {
       spanId: '1.1',
       traceFlags: TraceFlags.SAMPLED,
-      traceId: '123'
+      traceId: '123',
     },
-    data: { samplingRatio: 1 },
-    startTime
+    data: { samplingRate: 1 },
+    startTime,
   });
   const spanmetrics = logger.span;
   expect(spanmetrics.context.spanId).toBe('1.1.1');
@@ -116,16 +133,16 @@ test('SimpleLogger::startSpan with remote context', done => {
 
   logger.flush(() => {
     try {
-      const args = mockExport.mock.calls[0];
-      expect(args[0][0].traceFlags).toBe(TraceFlags.SAMPLED);
-      expect(args[0][0].metrics).toEqual({
+      const { evt } = getEvents(mockExport.mock.calls[0]);
+      expect(evt.traceFlags).toBe(TraceFlags.SAMPLED);
+      expect(evt.metrics).toEqual({
         'test.span.start.latency':
-          spanmetrics.startTime - spanmetrics.userStartTime
+          spanmetrics.startTime - spanmetrics.userStartTime,
       });
-      expect(args[0][0].data).toEqual({
-        samplingRatio: 1,
-        spanId: spanmetrics.context.spanId,
-        traceId: spanmetrics.context.traceId
+      expect(evt.spanId).toEqual(spanmetrics.context.spanId);
+      expect(evt.traceId).toEqual(spanmetrics.context.traceId);
+      expect(evt.data).toEqual({
+        samplingRate: 1,
       });
       done();
     } catch (err) {
@@ -141,7 +158,7 @@ test('SimpleLogger::startSpan start sub span', () => {
   const logger3 = logger1.startSpan('test.span3');
   expect(logger1.getAttributes()).toEqual({
     ...logger2.getAttributes(),
-    spanName: 'test.span1'
+    spanName: 'test.span1',
   });
   expect(logger2.span.context.spanId).toBe(`${logger1.span.context.spanId}.1`);
   expect(logger2.getAttributes().spanName).toBe('test.span2');
@@ -152,10 +169,10 @@ test('SimpleLogger::startSpan start sub span', () => {
   expect(span2.context.traceId).toBe(logger1.span.context.traceId);
 });
 
-test('SimpleLogger::startSpan logStart is false', done => {
+test('SimpleLogger::startSpan logStart is false', (done) => {
   const { ace, mockExport } = createMockLib();
   const logger1 = ace.logger.startSpan('test.span1', {
-    logStart: true
+    logStart: true,
   });
   logger1.flush(() => {
     expect(mockExport.mock.calls.length).toBe(1);
@@ -163,51 +180,57 @@ test('SimpleLogger::startSpan logStart is false', done => {
   });
 });
 
-test('SimpleLogger::endSpan without event argument', done => {
+test('SimpleLogger::endSpan without event argument', (done) => {
   const { ace, mockExport } = createMockLib();
+  ace.logger.setAttributes({
+    logger: 'end-span-test',
+    parent: 'test',
+  });
   const logger = ace.logger.startSpan('test.span');
   logger.setAttributes({
     tag1: 'tag1',
-    tag2: 'tag1'
+    tag2: 'tag1',
   });
   logger.setAttributes({
-    tag2: 'tag2'
+    tag2: 'tag2',
   });
   logger.endSpan();
   expect(mockExport.mock.calls.length).toBe(0);
   logger.flush(() => {
     try {
       expect(mockExport.mock.calls.length).toBe(1);
-
-      const evts = mockExport.mock.calls[0][0];
+      const { exEvts, evt, loggerEvts } = getEvents(mockExport.mock.calls[0]);
       const span = logger.span;
-      expect(evts.length).toBe(1);
+      expect(exEvts.events.length).toBe(1);
       // timing end span
-      expect(evts[0].attributes).toEqual({
+      expect(exEvts.attributes).toEqual({
         app: 'test-app',
         appVersion: '0.0.1',
-        logger: 'acelogger',
-        lib: `${pkg.name}@${pkg.version}`,
+        lib: pkg.name,
+        libVersion: pkg.version,
+        env: 'test',
+        os: 'mac',
+        osVersion: '1.0',
+      });
+      expect(loggerEvts.attributes).toEqual({
         spanKind: SpanKind.INTERNAL,
-        spanName: span.name,
+        spanName: 'test.span',
+        logger: 'end-span-test',
+        parent: 'test',
         tag1: 'tag1',
-        tag2: 'tag2'
+        tag2: 'tag2',
       });
-      expect(evts[0].data).toEqual({
-        spanId: span.context.spanId,
-        traceId: span.context.traceId
-      });
-      expect(evts[0].name).toBe('test.span.end');
-      expect(evts[0].message).toBe(
+      expect(evt.name).toBe('test.span.end');
+      expect(evt.message).toBe(
         `test.span end with ${logger.span.endTime - logger.span.startTime}ms`
       );
-      expect(evts[0].level).toBe(LogLevel.Info);
+      expect(evt.level).toBe(LogLevel.Info);
       expect(span.startTime).toEqual(span.userStartTime);
-      expect(evts[0].metrics).toEqual({
-        'test.span.duration': span.endTime - span.startTime
+      expect(evt.metrics).toEqual({
+        'test.span.duration': span.endTime - span.startTime,
       });
-      expect(evts[0].status).toBe(CanonicalCode.OK);
-      expect(evts[0].type).toBe(EventType.Tracing);
+      expect(evt.status).toBe(CanonicalCode.OK);
+      expect(evt.type).toBe(EventType.Tracing);
       done();
     } catch (err) {
       done(err);
@@ -215,7 +238,7 @@ test('SimpleLogger::endSpan without event argument', done => {
   });
 });
 
-test('SimpleLogger::endSpan with event argument', done => {
+test('SimpleLogger::endSpan with event argument', (done) => {
   const { ace, mockExport } = createMockLib();
   const endTime = Date.now() + 1000;
   const logger = ace.logger.startSpan('test.span');
@@ -224,21 +247,22 @@ test('SimpleLogger::endSpan with event argument', done => {
     message: 'endSpan message',
     status: CanonicalCode.NOT_FOUND,
     time: endTime,
-    traceFlags: TraceFlags.SAMPLED
+    traceFlags: TraceFlags.SAMPLED,
   });
   ace.flush(() => {
     try {
       expect(mockExport.mock.calls.length).toBe(1);
-      const endEvent = mockExport.mock.calls[0][0][0];
-      expect(endEvent.message).toBe(
-        `test.span end with ${logger.span.endTime -
-          logger.span.startTime}ms, endSpan message`
+      const { evt } = getEvents(mockExport.mock.calls[0]);
+      expect(evt.message).toBe(
+        `test.span end with ${
+          logger.span.endTime - logger.span.startTime
+        }ms, endSpan message`
       );
-      expect(endEvent.level).toBe(LogLevel.Error);
-      expect(endEvent.traceFlags).toBe(TraceFlags.SAMPLED);
-      expect(endEvent.status).toBe(CanonicalCode.NOT_FOUND);
-      expect(endEvent.metrics).toEqual({
-        'test.span.duration': endTime - logger.span.startTime
+      expect(evt.level).toBe(LogLevel.Error);
+      expect(evt.traceFlags).toBe(TraceFlags.SAMPLED);
+      expect(evt.status).toBe(CanonicalCode.NOT_FOUND);
+      expect(evt.metrics).toEqual({
+        'test.span.duration': endTime - logger.span.startTime,
       });
       done();
     } catch (error) {
@@ -247,18 +271,18 @@ test('SimpleLogger::endSpan with event argument', done => {
   });
 });
 
-test('SimpleLogger::endSpan with error status', done => {
+test('SimpleLogger::endSpan with error status', (done) => {
   const { ace, mockExport } = createMockLib();
-  // @ts-ignore
   const logger = ace.logger.startSpan('test.span');
   logger.endSpan({
     level: LogLevel.Warn,
-    status: CanonicalCode.INTERNAL
+    status: CanonicalCode.INTERNAL,
   });
   ace.flush(() => {
     try {
       expect(mockExport.mock.calls.length).toBe(1);
-      const infoevts = mockExport.mock.calls[0][0];
+      const { loggerEvts } = getEvents(mockExport.mock.calls[0]);
+      const infoevts = loggerEvts.events;
       expect(infoevts.length).toBe(1);
       expect(infoevts[0].status).toBe(CanonicalCode.INTERNAL);
       expect(infoevts[0].level).toBe(LogLevel.Error);
@@ -269,16 +293,16 @@ test('SimpleLogger::endSpan with error status', done => {
   });
 });
 
-test('SimpleLogger::endSpan whitout span', done => {
+test('SimpleLogger::endSpan whitout span', (done) => {
   const { ace, mockExport } = createMockLib();
   ace.logger.endSpan();
   ace.logger.flush(() => {
     try {
-      const evts = mockExport.mock.calls[0][0];
-      expect(evts[0].message).toBe(
+      const { evt } = getEvents(mockExport.mock.calls[0]);
+      expect(evt.message).toBe(
         'logger.endSpan must call after logger.startSpan'
       );
-      expect(evts[0].level).toBe(LogLevel.Error);
+      expect(evt.level).toBe(LogLevel.Error);
       done();
     } catch (err) {
       done(err);
@@ -286,22 +310,22 @@ test('SimpleLogger::endSpan whitout span', done => {
   });
 });
 
-test('SimpleLogger log message whitout span', done => {
+test('SimpleLogger log message whitout span', (done) => {
   const { ace, mockExport } = createMockLib();
   ace.logger.debug('test debug', {
-    data: { test: 'debug' }
+    data: { test: 'debug' },
   });
   ace.logger.info('test info', {
-    data: { test: 'info' }
+    data: { test: 'info' },
   });
   ace.logger.warn('test warn', {
-    data: { test: 'warn' }
+    data: { test: 'warn' },
   });
   ace.logger.error(new Error('test error'), {
-    data: { test: 'error' }
+    data: { test: 'error' },
   });
   ace.logger.fatal(new Error('test fatal'), {
-    data: { test: 'fatal' }
+    data: { test: 'fatal' },
   });
 
   ace.logger.flush(() => {
@@ -310,18 +334,18 @@ test('SimpleLogger log message whitout span', done => {
 
       const levels = ['debug', 'info', 'warn', 'error', 'fatal'];
       for (let i = 0; i < 5; i++) {
-        const evts = mockExport.mock.calls[i][0];
-        expect(evts[0].name).toBe(`log.${levels[i]}`);
-        expect(evts[0].message).toBe('test ' + levels[i]);
-        expect(evts[0].level).toBe(i);
-        expect(evts[0].traceFlags).toBe(TraceFlags.NONE);
-        expect(evts[0].data).toEqual({
-          spanId: DEFAULT_SPAN_ID,
-          traceId: DEFAULT_TRACE_ID,
-          test: levels[i]
+        const { evt } = getEvents(mockExport.mock.calls[i]);
+        expect(evt.name).toBe(`log.${levels[i]}`);
+        expect(evt.message).toBe('test ' + levels[i]);
+        expect(evt.level).toBe(i);
+        expect(evt.traceFlags).toBe(TraceFlags.NONE);
+        expect(evt.spanId).toBe(DEFAULT_SPAN_ID);
+        expect(evt.traceId).toBe(DEFAULT_TRACE_ID);
+        expect(evt.data).toEqual({
+          test: levels[i],
         });
         if (levels[i] === 'error' || levels[i] === 'fatal') {
-          expect(evts[0].stack).toBeTruthy();
+          expect(evt.stack).toBeTruthy();
         }
       }
       done();
@@ -331,13 +355,13 @@ test('SimpleLogger log message whitout span', done => {
   });
 });
 
-test('SimpleLogger log error with string', done => {
+test('SimpleLogger log error with string', (done) => {
   const { ace, mockExport } = createMockLib();
   ace.logger.error('test error', {
-    data: { test: 'error' }
+    data: { test: 'error' },
   });
   ace.logger.fatal('test fatal', {
-    data: { test: 'fatal' }
+    data: { test: 'fatal' },
   });
 
   ace.logger.flush(() => {
@@ -346,16 +370,16 @@ test('SimpleLogger log error with string', done => {
 
       const levels = ['error', 'fatal'];
       for (let i = 0; i < 2; i++) {
-        const evts = mockExport.mock.calls[i][0];
-        expect(evts[0].name).toBe(`log.${levels[i]}`);
-        expect(evts[0].message).toBe('test ' + levels[i]);
-        expect(evts[0].traceFlags).toBe(TraceFlags.NONE);
-        expect(evts[0].data).toEqual({
-          spanId: DEFAULT_SPAN_ID,
-          traceId: DEFAULT_TRACE_ID,
-          test: levels[i]
+        const { evt } = getEvents(mockExport.mock.calls[i]);
+        expect(evt.name).toBe(`log.${levels[i]}`);
+        expect(evt.message).toBe('test ' + levels[i]);
+        expect(evt.traceFlags).toBe(TraceFlags.NONE);
+        expect(evt.spanId).toBe(DEFAULT_SPAN_ID);
+        expect(evt.traceId).toBe(DEFAULT_TRACE_ID);
+        expect(evt.data).toEqual({
+          test: levels[i],
         });
-        expect(evts[0].stack).toBeFalsy();
+        expect(evt.stack).toEqual(undefined);
       }
       done();
     } catch (err) {
@@ -364,15 +388,15 @@ test('SimpleLogger log error with string', done => {
   });
 });
 
-test('SimpleLogger log with traceFlag', done => {
+test('SimpleLogger log with traceFlag', (done) => {
   const { ace, mockExport } = createMockLib();
   ace.logger.info('test set buffer size', {
-    traceFlags: TraceFlags.SAMPLED
+    traceFlags: TraceFlags.SAMPLED,
   });
   ace.logger.flush(() => {
     try {
-      const evts = mockExport.mock.calls[0][0];
-      expect(evts[0].traceFlags).toBe(TraceFlags.SAMPLED);
+      const { evt } = getEvents(mockExport.mock.calls[0]);
+      expect(evt.traceFlags).toBe(TraceFlags.SAMPLED);
       done();
     } catch (err) {
       done(err);
@@ -396,28 +420,26 @@ test('SimpleLogger buffer is full, from 0.10.0 only for compatible with old vers
   expect(ace.flushing).toBeTruthy();
 });
 
-test('SimpleLogger::storeMetrics', done => {
+test('SimpleLogger::storeMetrics', (done) => {
   const { ace, mockExport } = createMockLib();
   ace.logger.storeMetrics({
     status: CanonicalCode.INTERNAL,
     message: 'test-store-message',
     samplingRate: 0.3,
     metrics: {
-      cpuUsage: 0.1
-    }
+      cpuUsage: 0.1,
+    },
   });
   ace.logger.flush(() => {
     try {
-      const evts = mockExport.mock.calls[0][0];
-      expect(evts[0].name).toBe('metric.store');
-      expect(evts[0].status).toBe(CanonicalCode.INTERNAL);
-      expect(evts[0].message).toBe(
-        'store {"cpuUsage":0.1}, test-store-message'
-      );
-      expect(evts[0].level).toBe(LogLevel.Error);
-      expect(evts[0].samplingRate).toBe(0.3);
-      expect(evts[0].metrics).toEqual({
-        cpuUsage: 0.1
+      const { evt } = getEvents(mockExport.mock.calls[0]);
+      expect(evt.name).toBe('metric.store');
+      expect(evt.status).toBe(CanonicalCode.INTERNAL);
+      expect(evt.message).toBe('store {"cpuUsage":0.1}, test-store-message');
+      expect(evt.level).toBe(LogLevel.Error);
+      expect(evt.samplingRate).toBe(0.3);
+      expect(evt.metrics).toEqual({
+        cpuUsage: 0.1,
       });
       done();
     } catch (err) {
@@ -426,20 +448,20 @@ test('SimpleLogger::storeMetrics', done => {
   });
 });
 
-test('SimpleLogger::storeMetrics without message', done => {
+test('SimpleLogger::storeMetrics without message', (done) => {
   const { ace, mockExport } = createMockLib();
   ace.logger.storeMetrics({
     metrics: {
-      cpuUsage: 0.1
-    }
+      cpuUsage: 0.1,
+    },
   });
   ace.logger.flush(() => {
     try {
-      const evts = mockExport.mock.calls[0][0];
-      expect(evts[0].message).toBe('store {"cpuUsage":0.1}');
-      expect(evts[0].status).toBe(CanonicalCode.OK);
-      expect(evts[0].level).toBe(LogLevel.Debug);
-      expect(evts[0].samplingRate).toBe(1);
+      const { evt } = getEvents(mockExport.mock.calls[0]);
+      expect(evt.message).toBe('store {"cpuUsage":0.1}');
+      expect(evt.status).toBe(CanonicalCode.OK);
+      expect(evt.level).toBe(LogLevel.Debug);
+      expect(evt.samplingRate).toBe(1);
       done();
     } catch (err) {
       done(err);
@@ -447,19 +469,19 @@ test('SimpleLogger::storeMetrics without message', done => {
   });
 });
 
-test('SimpleLogger::event without message', done => {
+test('SimpleLogger::event without message', (done) => {
   const { ace, mockExport } = createMockLib();
   ace.logger.event('test-event', {
     attributes: {
-      'my-attr': 'attr'
-    }
+      'my-attr': 'attr',
+    },
   });
   ace.logger.flush(() => {
     try {
-      const evts = mockExport.mock.calls[0][0];
-      expect(evts[0].level).toBe(LogLevel.Info);
-      expect(evts[0].attributes['my-attr']).toBe('attr');
-      expect(evts[0].message).toBe(`log event: test-event`);
+      const { evt } = getEvents(mockExport.mock.calls[0]);
+      expect(evt.level).toBe(LogLevel.Info);
+      expect(evt.attributes['my-attr']).toBe('attr');
+      expect(evt.message).toBe(`log event: test-event`);
       done();
     } catch (err) {
       done(err);
@@ -467,15 +489,15 @@ test('SimpleLogger::event without message', done => {
   });
 });
 
-test('SimpleLogger::event with message', done => {
+test('SimpleLogger::event with message', (done) => {
   const { ace, mockExport } = createMockLib();
   ace.logger.event('test-event', {
-    message: 'my test-event'
+    message: 'my test-event',
   });
   ace.logger.flush(() => {
     try {
-      const evts = mockExport.mock.calls[0][0];
-      expect(evts[0].message).toBe(`my test-event`);
+      const { evt } = getEvents(mockExport.mock.calls[0]);
+      expect(evt.message).toBe(`my test-event`);
       done();
     } catch (err) {
       done(err);
@@ -483,22 +505,20 @@ test('SimpleLogger::event with message', done => {
   });
 });
 
-test('SimpleLogger::setAttributes update logger name and version', done => {
+test('SimpleLogger::setAttributes update logger name and version', (done) => {
   const { ace, mockExport } = createMockLib();
   ace.logger.debug('test debug', {
-    data: { test: 'debug' }
+    data: { test: 'debug' },
   });
   ace.logger.flush(() => {
     try {
-      const evts = mockExport.mock.calls[0][0];
-      expect(evts[0].attributes).toEqual({
-        app: 'test-app',
-        appVersion: '0.0.1',
-        logger: 'acelogger',
-        lib: `${pkg.name}@${pkg.version}`,
+      const { evt, loggerEvts } = getEvents(mockExport.mock.calls[0]);
+      expect(loggerEvts.attributes).toEqual({
+        logger: 'unknown',
         spanKind: 0,
-        spanName: 'unknown'
+        spanName: 'unknown',
       });
+      expect(evt.attributes).toEqual(undefined);
       done();
     } catch (err) {
       done(err);
@@ -510,11 +530,8 @@ test('SimpleLogger::getAttributes', () => {
   const { ace } = createMockLib();
   const attrs = ace.logger.getAttributes();
   expect(attrs).toEqual({
-    app: 'test-app',
-    appVersion: '0.0.1',
-    logger: 'acelogger',
-    lib: `${pkg.name}@${pkg.version}`,
+    logger: 'unknown',
     spanKind: 0,
-    spanName: 'unknown'
+    spanName: 'unknown',
   });
 });

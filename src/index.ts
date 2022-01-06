@@ -14,7 +14,7 @@ export {
   ConsoleExporterNode,
   SimpleLogger,
   SimpleTracer,
-  SimpleManager
+  SimpleManager,
 };
 
 const manager = new SimpleManager();

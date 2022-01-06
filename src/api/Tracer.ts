@@ -16,7 +16,7 @@ export type SpanOptions = TSpanOptions & {
 export interface Tracer {
   manager: Manager;
   toJSON(): TracerStruct;
-  createSpanContext(...args: any[]): SpanContext;
+  createSpanContext(...args: unknown[]): SpanContext;
   createSpan(name: string, options?: SpanOptions): SpanStruct;
   start(time?: TimeInput): void;
   end(time?: TimeInput): void;
