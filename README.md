@@ -51,12 +51,12 @@ import ace, {
   ConsoleExporterWeb,
   LogLevel,
   CanonicalCode,
-  isMetricEvent
+  isMetricEvent,
 } from 'acelogger';
 
 ace.logger.setAttributes({
   os: 'MacOS',
-  osVersion: '13.0'
+  osVersion: '13.0',
 });
 
 class MetricExporterWeb implements LoggerEventExporter {
@@ -76,25 +76,25 @@ ace.logger.info('test info');
 ace.logger.storeMetrics({
   metrics: {
     memoryUsage: 0.1,
-    cpuUsage: 0.5
-  }
+    cpuUsage: 0.5,
+  },
 });
 ace.logger.event('button_click');
 
 // creat a span logger
 const spanLogger = ace.logger.startSpan('first.span', {
-  parent: ace.tracer.createSpanContext()
+  parent: ace.tracer.createSpanContext(),
 });
 
 spanLogger.setAttributes({
-  path: '/path/to'
+  path: '/path/to',
 });
 
 spanLogger.info('test info');
 spanLogger.event('button_click');
 
 spanLogger.endSpan({
-  status: CanonicalCode.OK
+  status: CanonicalCode.OK,
 });
 ```
 
@@ -106,14 +106,14 @@ when logging in module, you can customize a scoped logger.
 import globaleAce, {
   SimpleManager,
   LogLevel,
-  ConsoleExporterWeb
+  ConsoleExporterWeb,
 } from 'acelogger';
 const manager = new SimpleManager();
 
 manager.logger.setAttributes({
   app: globaleAce.logger.getAttributes().app,
   appVersion: globaleAce.logger.getAttributes().appVersion,
-  lib: 'my-module@0.0.1'
+  lib: 'my-module@0.0.1',
 });
 
 // init logger exporter
@@ -156,6 +156,10 @@ manager.setExporter(LogLevel.Debug, {
 [See Details](./src/api)
 
 # ChangeLog
+
+#### 2021-10-18 0.13.0
+
+- refactor: new exporter api (break change)
 
 #### 2021-10-18 0.12.1
 
