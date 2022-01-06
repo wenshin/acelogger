@@ -157,7 +157,7 @@ manager.setExporter(LogLevel.Debug, {
 
 # ChangeLog
 
-#### 2021-10-18 0.13.0
+#### 2021-10-18 0.13.2
 
 - refactor: new exporter api (break change)
 
