@@ -157,6 +157,11 @@ manager.setExporter(LogLevel.Debug, {
 
 # ChangeLog
 
+#### 2022-01-13 0.13.3
+
+- fix: default span id start with 0
+- feat: add userStartTime to span start event
+
 #### 2021-10-18 0.13.2
 
 - refactor: new exporter api (break change)
