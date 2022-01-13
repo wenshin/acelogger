@@ -342,7 +342,7 @@ test('SimpleLogger log message whitout span', (done) => {
         expect(evt.message).toBe('test ' + levels[i]);
         expect(evt.level).toBe(i);
         expect(evt.traceFlags).toBe(TraceFlags.NONE);
-        expect(evt.spanId).toBe(DEFAULT_SPAN_ID);
+        expect(evt.spanId).toBe(`${DEFAULT_TRACE_ID}-0`);
         expect(evt.traceId).toBe(DEFAULT_TRACE_ID);
         expect(evt.data).toEqual({
           test: levels[i],

@@ -44,7 +44,7 @@ export function createTraceId(): string {
 }
 
 export const DEFAULT_TRACE_ID = createTraceId();
-export const DEFAULT_SPAN_ID = `${DEFAULT_TRACE_ID}-1`;
+export const DEFAULT_SPAN_ID = `${DEFAULT_TRACE_ID}-0`;
 
 export default class SimpleTracer implements Tracer {
   public manager: Manager;
