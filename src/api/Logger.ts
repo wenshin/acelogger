@@ -28,8 +28,7 @@ export interface LoggerEventParams {
   };
   //  any object data
   data?: {
-    spanId?: string;
-    traceId?: string;
+    userStartTime?: TimeInput;
     [key: string]: unknown;
   };
   // error status code

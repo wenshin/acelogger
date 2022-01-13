@@ -37,6 +37,10 @@ export interface LoggerEvent {
   attributes: Attributes;
   //  any object data
   data: {
+    /**
+     * span start event will carry the userStartTime
+     */
+    userStartTime?: TimeInput;
     [key: string]: unknown;
   };
   // error status code

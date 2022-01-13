@@ -126,7 +126,7 @@ test('SimpleLogger::startSpan with remote context', (done) => {
       traceFlags: TraceFlags.SAMPLED,
       traceId: '123',
     },
-    data: { samplingRate: 1 },
+    data: { test: 1 },
     startTime,
   });
   const spanmetrics = logger.span;
@@ -144,9 +144,7 @@ test('SimpleLogger::startSpan with remote context', (done) => {
       });
       expect(evt.spanId).toEqual(spanmetrics.context.spanId);
       expect(evt.traceId).toEqual(spanmetrics.context.traceId);
-      expect(evt.data).toEqual({
-        samplingRate: 1,
-      });
+      expect(evt.data).toEqual({ test: 1, userStartTime: startTime });
       done();
     } catch (err) {
       done(err);

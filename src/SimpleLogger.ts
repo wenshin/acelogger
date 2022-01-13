@@ -14,6 +14,7 @@ import {
   TraceFlags,
   SpanKind,
   StartSpanEventOptions,
+  LoggerEvent,
 } from './api';
 import { DEFAULT_TRACE_ID, DEFAULT_SPAN_ID } from './SimpleTracer';
 import {
@@ -179,8 +180,10 @@ export default class SimpleLogger implements Logger {
     const logStart = opts && opts.logStart === true;
     const eventName = getSpanEventName(span.name, 'start');
     if (logStart) {
+      const data: LoggerEvent['data'] = (opts && opts.data) || {};
+      data.userStartTime = span.userStartTime;
       logger.innerLog({
-        data: opts && opts.data,
+        data: data,
         level: LogLevel.Info,
         metrics: {
           [getLatencyMetric(eventName)]: span.startTime - span.userStartTime,
