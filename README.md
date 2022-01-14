@@ -157,6 +157,11 @@ manager.setExporter(LogLevel.Debug, {
 
 # ChangeLog
 
+#### 2022-01-14 0.13.4
+
+- feat: set logStart default is true
+- feat: add IDGenerator api
+
 #### 2022-01-13 0.13.3
 
 - fix: default span id start with 0
