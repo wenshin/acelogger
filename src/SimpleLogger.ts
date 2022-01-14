@@ -16,7 +16,6 @@ import {
   StartSpanEventOptions,
   LoggerEvent,
 } from './api';
-import { DEFAULT_TRACE_ID, DEFAULT_SPAN_ID } from './SimpleTracer';
 import {
   getDurationMetric,
   getLatencyMetric,
@@ -177,7 +176,7 @@ export default class SimpleLogger implements Logger {
         spanName: span.name,
       })
     );
-    const logStart = opts && opts.logStart === true;
+    const logStart = !(opts && opts.logStart === false);
     const eventName = getSpanEventName(span.name, 'start');
     if (logStart) {
       const data: LoggerEvent['data'] = (opts && opts.data) || {};
@@ -232,8 +231,9 @@ export default class SimpleLogger implements Logger {
   ): void {
     let traceFlags = evt.traceFlags || TraceFlags.NONE;
     const tracing = {
-      spanId: DEFAULT_SPAN_ID,
-      traceId: DEFAULT_TRACE_ID,
+      spanId: this.manager.idCreator.defaultSpanId,
+      traceId: this.manager.idCreator.defaultTraceId,
+      parentSpanId: '',
     };
 
     if (this.span) {
@@ -242,6 +242,7 @@ export default class SimpleLogger implements Logger {
       }
 
       tracing.spanId = this.span.context.spanId;
+      tracing.parentSpanId = this.span.parentContext?.spanId || '';
       tracing.traceId = this.span.context.traceId;
     }
 

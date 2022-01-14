@@ -1,3 +1,4 @@
+export * from './IDCreator';
 export * from './Timer';
 export * from './Tracer';
 export * from './Span';

@@ -15,7 +15,6 @@ import { performance } from 'perf_hooks';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import pkg from '../package.json';
-import { DEFAULT_TRACE_ID, DEFAULT_SPAN_ID } from './SimpleTracer';
 
 function createMockLib(): {
   ace: Manager;
@@ -62,9 +61,7 @@ function getEvents(args: ExporterEvents[]) {
 
 test('SimpleLogger::startSpan without remote context', (done) => {
   const { ace, mockExport } = createMockLib();
-  const logger = ace.logger.startSpan('test.span1', {
-    logStart: true,
-  });
+  const logger = ace.logger.startSpan('test.span1');
   const span = logger.span;
   expect(span).toBeTruthy();
   expect(span.startTime).toBeTruthy();
@@ -103,8 +100,9 @@ test('SimpleLogger::startSpan without remote context', (done) => {
     expect(evt.traceFlags).toBe(TraceFlags.NONE);
     expect(evt.status).toBe(CanonicalCode.OK);
     expect(evt.type).toBe(EventType.Tracing);
-
-    const logger2 = ace.logger.startSpan('test.span2');
+    const logger2 = ace.logger.startSpan('test.span2', {
+      logStart: false,
+    });
     expect(logger2.span.context.spanId).toBe(
       `${logger2.span.context.traceId}-2`
     );
@@ -119,7 +117,6 @@ test('SimpleLogger::startSpan with remote context', (done) => {
   const { ace, mockExport } = createMockLib();
   const startTime = ace.timer.now() - 1000;
   const logger = ace.logger.startSpan('test.span', {
-    logStart: true,
     kind: SpanKind.SERVER,
     parent: {
       spanId: '1.1',
@@ -173,10 +170,10 @@ test('SimpleLogger::startSpan start sub span', () => {
 test('SimpleLogger::startSpan logStart is false', (done) => {
   const { ace, mockExport } = createMockLib();
   const logger1 = ace.logger.startSpan('test.span1', {
-    logStart: true,
+    logStart: false,
   });
   logger1.flush(() => {
-    expect(mockExport.mock.calls.length).toBe(1);
+    expect(mockExport.mock.calls.length).toBe(0);
     done();
   });
 });
@@ -187,7 +184,9 @@ test('SimpleLogger::endSpan without event argument', (done) => {
     logger: 'end-span-test',
     parent: 'test',
   });
-  const logger = ace.logger.startSpan('test.span');
+  const logger = ace.logger.startSpan('test.span', {
+    logStart: false,
+  });
   logger.setAttributes({
     tag1: 'tag1',
     tag2: 'tag1',
@@ -252,8 +251,8 @@ test('SimpleLogger::endSpan with event argument', (done) => {
   });
   ace.flush(() => {
     try {
-      expect(mockExport.mock.calls.length).toBe(1);
-      const { evt } = getEvents(mockExport.mock.calls[0]);
+      expect(mockExport.mock.calls.length).toBe(2);
+      const { evt } = getEvents(mockExport.mock.calls[1]);
       expect(evt.message).toBe(
         `test.span end with ${
           logger.span.endTime - logger.span.startTime
@@ -281,8 +280,8 @@ test('SimpleLogger::endSpan with error status', (done) => {
   });
   ace.flush(() => {
     try {
-      expect(mockExport.mock.calls.length).toBe(1);
-      const { loggerEvts } = getEvents(mockExport.mock.calls[0]);
+      expect(mockExport.mock.calls.length).toBe(2);
+      const { loggerEvts } = getEvents(mockExport.mock.calls[1]);
       const infoevts = loggerEvts.events;
       expect(infoevts.length).toBe(1);
       expect(infoevts[0].status).toBe(CanonicalCode.INTERNAL);
@@ -340,8 +339,8 @@ test('SimpleLogger log message whitout span', (done) => {
         expect(evt.message).toBe('test ' + levels[i]);
         expect(evt.level).toBe(i);
         expect(evt.traceFlags).toBe(TraceFlags.NONE);
-        expect(evt.spanId).toBe(`${DEFAULT_TRACE_ID}-0`);
-        expect(evt.traceId).toBe(DEFAULT_TRACE_ID);
+        expect(evt.spanId).toBe(`${ace.idCreator.defaultTraceId}-0`);
+        expect(evt.traceId).toBe(ace.idCreator.defaultTraceId);
         expect(evt.data).toEqual({
           test: levels[i],
         });
@@ -375,8 +374,8 @@ test('SimpleLogger log error with string', (done) => {
         expect(evt.name).toBe(`log.${levels[i]}`);
         expect(evt.message).toBe('test ' + levels[i]);
         expect(evt.traceFlags).toBe(TraceFlags.NONE);
-        expect(evt.spanId).toBe(DEFAULT_SPAN_ID);
-        expect(evt.traceId).toBe(DEFAULT_TRACE_ID);
+        expect(evt.spanId).toBe(ace.idCreator.defaultSpanId);
+        expect(evt.traceId).toBe(ace.idCreator.defaultTraceId);
         expect(evt.data).toEqual({
           test: levels[i],
         });

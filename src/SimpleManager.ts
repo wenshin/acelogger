@@ -11,8 +11,10 @@ import {
   ManagerAttributes,
   InnerManagerAttributes,
 } from './api';
+import { IDCreator } from './api/IDCreator';
 import SimpleLogger from './SimpleLogger';
 import SimpleTracer from './SimpleTracer';
+import { simpleIdCreator } from './SimpleIDCreator';
 
 const defaultTimer = {
   now: () => Date.now(),
@@ -22,6 +24,7 @@ enum RegisterKeys {
   Logger = 'logger',
   Tracer = 'tracer',
   Timer = 'timer',
+  IDCreator = 'idCreator',
 }
 
 interface CacheEvents {
@@ -36,7 +39,10 @@ export default class SimpleManager implements Manager {
 
   private defaultLogger: Logger;
   private defaultTracer: Tracer;
-  private registries = new Map<string, Logger | Tracer | Timer | null>();
+  private registries = new Map<
+    string,
+    Logger | Tracer | Timer | IDCreator | null
+  >();
   private exporterMap: Map<LogLevel, LoggerEventExporter[]> = new Map();
   // 200ms is the minimum interval for human eyes to feel no delay
   private flushDelay = 200;
@@ -102,6 +108,17 @@ export default class SimpleManager implements Manager {
 
   get timer(): Timer {
     return (this.registries.get(RegisterKeys.Timer) as Timer) || defaultTimer;
+  }
+
+  public setIDCreator(idCreator: IDCreator): void {
+    this.registries.set(RegisterKeys.IDCreator, idCreator);
+  }
+
+  get idCreator(): IDCreator {
+    return (
+      (this.registries.get(RegisterKeys.IDCreator) as IDCreator) ||
+      simpleIdCreator
+    );
   }
 
   /**

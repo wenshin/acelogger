@@ -25,6 +25,7 @@ export interface LoggerEvent {
   traceFlags: TraceFlags;
   traceId: string;
   spanId: string;
+  parentSpanId: string;
   /**
    * set sampling rate to the event
    */

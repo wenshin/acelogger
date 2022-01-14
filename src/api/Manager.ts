@@ -6,6 +6,7 @@ import { LogLevel } from './consts';
 import { LoggerEventExporter } from './LoggerEventExporter';
 import { LoggerEvent } from './LoggerEvent';
 import { LoggerAttributes } from './Logger';
+import { IDCreator } from './IDCreator';
 
 export interface ManagerAttributes extends Attributes {
   app: string;
@@ -34,6 +35,7 @@ export interface Manager {
   readonly logger: Logger;
   readonly tracer: Tracer;
   readonly timer: Timer;
+  readonly idCreator: IDCreator;
   readonly flushing: boolean;
   readonly attributes: InnerManagerAttributes;
   eventBuffer: Map<LogLevel, Map<string, CacheEvents>>;
@@ -43,6 +45,7 @@ export interface Manager {
   setLogger(logger: Logger | null): void;
   setTracer(tracer: Tracer | null): void;
   setTimer(timer: Timer | null): void;
+  setIDCreator(idCreator: IDCreator | null): void;
   /**
    * set the buffer size, the implemetion should have a default size
    * @param size
