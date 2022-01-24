@@ -157,6 +157,10 @@ manager.setExporter(LogLevel.Debug, {
 
 # ChangeLog
 
+#### 2022-01-24 0.13.5
+
+- feat: remove duration infomation in endSpan message
+
 #### 2022-01-14 0.13.4
 
 - feat: set logStart default is true
