@@ -217,8 +217,8 @@ export default class SimpleLogger implements Logger {
       e.metrics
     );
 
-    const msg = e.message ? `, ${e.message}` : '';
-    e.message = `${this.span.name} end with ${duration}ms${msg}`;
+    const msg = e.message || 'no message';
+    e.message = `[${this.span.name}] end with ${msg}`;
     this.innerLog(e);
   }
 

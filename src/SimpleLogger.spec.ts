@@ -221,9 +221,7 @@ test('SimpleLogger::endSpan without event argument', (done) => {
         tag2: 'tag2',
       });
       expect(evt.name).toBe('test.span.end');
-      expect(evt.message).toBe(
-        `test.span end with ${logger.span.endTime - logger.span.startTime}ms`
-      );
+      expect(evt.message).toBe('[test.span] end with no message');
       expect(evt.level).toBe(LogLevel.Info);
       expect(span.startTime).toEqual(span.userStartTime);
       expect(evt.metrics).toEqual({
@@ -253,11 +251,7 @@ test('SimpleLogger::endSpan with event argument', (done) => {
     try {
       expect(mockExport.mock.calls.length).toBe(2);
       const { evt } = getEvents(mockExport.mock.calls[1]);
-      expect(evt.message).toBe(
-        `test.span end with ${
-          logger.span.endTime - logger.span.startTime
-        }ms, endSpan message`
-      );
+      expect(evt.message).toBe(`[test.span] end with endSpan message`);
       expect(evt.level).toBe(LogLevel.Error);
       expect(evt.traceFlags).toBe(TraceFlags.SAMPLED);
       expect(evt.status).toBe(CanonicalCode.NOT_FOUND);
